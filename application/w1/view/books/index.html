@@ -1,0 +1,105 @@
+{include file="comm/header"}
+<!-- 正文开始 -->
+<div class="layui-fluid">
+    <div class="layui-card">
+        <div class="layui-card-body table-tool-mini full-table">
+            <div class="layui-form toolbar">
+                <div class="layui-form-item">
+                    <div class="layui-inline" style="padding-right: 110px;">
+                        <button id="addBook" class="layui-btn icon-btn layui-btn-sm"><i class="layui-icon layui-icon-add-1"></i>添加图书</button>
+                    </div>
+                </div>
+            </div>
+            <table id="table" lay-filter="table"></table>
+        </div>
+    </div>
+</div>
+
+{include file="comm/footer"}
+<script type="text/html" id="barBook">
+    <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+</script>
+<script>
+    layui.use(['layer', 'form', 'table', 'util', 'admin'], function () {
+        var $ = layui.jquery;
+        var layer = layui.layer;
+        var form = layui.form;
+        var table = layui.table;
+        var util = layui.util;
+        var admin = layui.admin;
+
+        // 渲染表格，表格不需要分页
+        var insTb = table.render({
+            elem: '#table',
+            url: '{:url("index")}',
+            page: true,  //开启分页
+            even: true,  //奇偶行变色
+            limits: [10, 20, 50, 100],  //分页条数选项
+            limit: 10,  //默认每页条数
+            cols: [[
+                {type: 'checkbox'}  //复选框
+                , {type: 'numbers', title: '序号'}    //序号
+                , {field: 'book_name', title: '图书名', align: 'center'}
+                , {field: 'type_name', title: '图书类型', align: 'center'}
+                , {title: '操作', align: 'center', toolbar: '#barBook', width: 150}
+            ]]
+        });
+
+        // 添加按钮点击事件
+        $('#addBook').click(function () {
+            doEdit();
+        });
+
+        /* 显示表单弹窗 */
+        function doEdit(data) {
+            var layIndex = admin.open({
+                title: (data ? '修改' : '添加') + '图书',
+                url: "{:url('bookForm')}",
+                data: {data: data},     // 传递数据到表单页面
+                end: function () {
+                    if (admin.getLayerData(layIndex, 'formOk')) {  // 判断表单操作成功标识
+                        insTb.reload();  // 成功刷新表格
+                    }
+                },
+                success: function (layero, dIndex) {
+                    // 弹窗超出范围不出现滚动条
+                    $(layero).children('.layui-layer-content').css('overflow', 'visible');
+                }
+            });
+        }
+
+
+
+        /* 表格工具条点击事件 */
+        table.on('tool(table)', function (obj) {
+            if (obj.event === 'edit') { // 修改
+                doEdit(obj.data);
+            } else if (obj.event === 'del') { // 删除
+                doDel(obj.data.book_id, obj.data.book_name);  //分别对应数据的类型id和类型名
+            }
+        });
+
+        /* 删除 */
+        function doDel(id, name) {
+            layer.confirm('确定要删除“' + name + '”吗？', {
+                skin: 'layui-layer-admin',
+                shade: .1
+            }, function (index) {
+                layer.close(index);
+                layer.load(2);
+                $.post("{:url('bookDel')}", {
+                    id: id
+                }, function (res) {
+                    layer.closeAll('loading');
+                    if (res.code === 1) {
+                        layer.msg(res.msg, {icon: 1});
+                        insTb.reload({}, 'data');  //重新加载表格
+                    } else {
+                        layer.msg(res.msg, {icon: 2});
+                    }
+                }, 'json');
+            });
+        }
+    });
+</script>

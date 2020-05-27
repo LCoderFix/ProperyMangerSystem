@@ -1,0 +1,82 @@
+<form id="form" lay-filter="form" class="layui-form model-form">
+    <input name="menu_id" type="hidden"/>
+    <div class="layui-form-item">
+        <label class="layui-form-label">上级菜单</label>
+        <div class="layui-input-block">
+            <select name="parent_id" lay-search>
+                <option value="">请选择上级菜单</option>
+                {volist name="list" id="vo"}
+                <option value="{$vo.menu_id}">{$vo.name}</option>
+                {/volist}
+            </select>
+        </div>
+    </div>
+
+    <div class="layui-form-item">
+        <label class="layui-form-label layui-form-required">菜单名称</label>
+        <div class="layui-input-block">
+            <input name="name" placeholder="请输入菜单名称" type="text" class="layui-input" maxlength="50"
+                   lay-verType="tips" lay-verify="required" required/>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">菜单url</label>
+        <div class="layui-input-block">
+            <input name="url" placeholder="请输入菜单url" type="text" class="layui-input"/>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">菜单图标</label>
+        <div class="layui-input-block">
+            <input name="icon" placeholder="请输入菜单图标" type="text" class="layui-input"/>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label layui-form-required">排序号</label>
+        <div class="layui-input-block">
+            <input name="sort" placeholder="请输入排序号" type="number" class="layui-input" min="0" max="1000"
+                   lay-verType="tips" lay-verify="required|number" required/>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label layui-form-required">是否可见</label>
+        <div class="layui-input-block">
+            <input name="visible" type="radio" value="1" title="可见"/>
+            <input name="visible" type="radio" value="0" title="不可见"/>
+        </div>
+    </div>
+    <div class="layui-form-item text-right">
+        <button class="layui-btn layui-btn-primary" type="button" ew-event="closePageDialog">取消</button>
+        <button class="layui-btn" lay-filter="save" lay-submit>保存</button>
+    </div>
+</form>
+
+<script>
+    layui.use(['layer', 'form', 'admin'], function () {
+        var $ = layui.jquery;
+        var layer = layui.layer;
+        var form = layui.form;
+        var admin = layui.admin;
+
+        var data = admin.getLayerData('#form').data;  // 列表页面传递的数据，#menuForm这个只要写弹窗内任意一个元素的id即可
+        // 回显数据
+        form.val('form', data);
+        // 表单提交事件
+        form.on('submit(save)', function (data) {
+            layer.load(2);
+            var url = "{:url('menuForm')}";
+            $.post(url, data.field, function (res) {
+                layer.closeAll('loading');
+                if (res.code == 1) {
+                    layer.msg(res.msg, {icon: 1});
+                    admin.putLayerData('formOk', true, '#form');  // 设置操作成功的标识，#userForm这个只要写弹窗内任意一个元素的id即可
+                    admin.closeDialog('#form');  // 关闭页面层弹窗
+                } else {
+                    layer.msg(res.msg, {icon: 2});
+                }
+            }, 'json');
+            return false;
+        });
+
+    });
+</script>

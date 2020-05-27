@@ -1,0 +1,73 @@
+{include file="comm/header"}
+<!-- 正文开始 -->
+<div class="layui-fluid">
+    <div class="layui-card">
+        <div class="layui-card-body table-tool-mini full-table">
+            <table id="table" lay-filter="table"></table>
+        </div>
+    </div>
+</div>
+<script type="text/html" id="barBook">
+    <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="edit">修改</a>
+    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+</script>
+{include file="comm/footer"}
+<script>
+    layui.use(['layer', 'form', 'table', 'util', 'admin'], function () {
+        var $ = layui.jquery;
+        var layer = layui.layer;
+        var form = layui.form;
+        var table = layui.table;
+        var util = layui.util;
+        var admin = layui.admin;
+
+        // 渲染表格
+        var insTb = table.render({
+            elem: '#table',
+            url: '{:url("index")}',
+            even: true,
+            page: true,//开启分页
+            cols: [[
+                {type: 'checkbox'}
+                , {type: 'numbers', title: '序号'}
+                , {field: 'type_name', title: '类别名', align: 'center'}
+                , {field: 'book_name', title: '书名', align: 'center'}
+                , {title: '操作', align: 'center', toolbar: '#barBook'}
+            ]]
+        });
+
+        /* 表格工具条点击事件 */
+        table.on('tool(table)', function (obj) {
+            if (obj.event === 'edit') { // 修改
+                doEdit(obj.data);
+            } else if (obj.event === 'del') { // 删除
+                doDel(obj.data.book_id, obj.data.book_name);
+            }
+        });
+
+
+
+        /* 删除 */
+        function doDel(id, name) {
+            layer.confirm('确定要删除“' + name + '”吗？', {
+                skin: 'layui-layer-admin',
+                shade: .1
+            }, function (index) {
+                layer.close(index);
+                layer.load(2);  //加载操作提示
+                $.post("{:url('bookDel')}", {
+                    book_id: id
+                }, function (res) {
+                    layer.closeAll('loading');
+                    if (res.code === 1) {
+                        layer.msg(res.msg, {icon: 1});
+                        insTb.reload();
+                    } else {
+                        layer.msg(res.msg, {icon: 2});
+                    }
+                }, 'json');
+            });
+        }
+
+    });
+</script>

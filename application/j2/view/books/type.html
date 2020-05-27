@@ -1,0 +1,99 @@
+{include file="comm/header"}
+<!-- 正文开始 -->
+<div class="layui-fluid">
+    <div class="layui-card">
+        <div class="layui-card-body table-tool-mini full-table">
+            <div class="layui-form toolbar">
+                <div class="layui-form-item">
+                    <div class="layui-inline">
+                        <button id="addType" class="layui-btn layui-btn-sm"><i class="layui-icon layui-icon-add-1"></i>添加
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <table id="table" lay-filter="table"></table>
+        </div>
+    </div>
+</div>
+<script type="text/html" id="barType">
+    <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+</script>
+{include file="comm/footer"}
+<script>
+    layui.use(['layer', 'form', 'table', 'util', 'admin'], function () {
+        var $ = layui.jquery;
+        var layer = layui.layer;
+        var form = layui.form;
+        var table = layui.table;
+        var util = layui.util;
+        var admin = layui.admin;
+
+        // 渲染表格
+        var insTb = table.render({
+            elem: '#table',
+            url:'{:url("type")}',  //如果url中不写模块和控制器的话默认为当前模块和当前控制器
+            even: true,
+            cols: [[
+                {type: 'checkbox'}
+                ,{type: 'numbers',title:'序号'}
+                ,{field: 'type_name',title:'类别名',align:'center'}
+                ,{title:'操作',align:'center',toolbar: '#barType'}
+            ]]
+        });
+
+        //监听工具条
+        table.on('tool(table)', function(obj){
+            if(obj.event === 'del'){
+                doDel(obj.data.type_id, obj.data.type_name);
+            } else if(obj.event === 'edit'){
+                doEdit(obj.data);
+            }
+        });
+
+        function doDel(type_id, name) {
+            layer.confirm('确定要删除“' + name + '”吗？', {
+                skin: 'layui-layer-admin',
+                shade: .1
+            }, function (index) {
+                layer.close(index);
+                layer.load(2);
+                $.post("{:url('typeDel')}", {
+                    type_id: type_id
+                }, function (res) {
+                    layer.closeAll('loading');
+                    if (res.code === 1) {
+                        layer.msg(res.msg, {icon: 1});
+                        insTb.reload({}, 'data');
+                    } else {
+                        layer.msg(res.msg, {icon: 2});
+                    }
+                }, 'json');
+            });
+        }
+
+        // 添加按钮点击事件
+        $('#addType').click(function () {
+            doEdit();
+        });
+
+        /* 显示表单弹窗 */
+        function doEdit(data) {
+            var layIndex = admin.open({
+                title: (data ? '修改' : '添加') + '图书类别',
+                url: "{:url('typeForm')}",
+                data: {data: data},     // 传递数据到表单页面
+                end: function () {
+                    if (admin.getLayerData(layIndex, 'formOk')) {  // 判断表单操作成功标识
+                        insTb.reload();  // 成功刷新表格
+                    }
+                },
+                success: function (layero, dIndex) {
+                    // 弹窗超出范围不出现滚动条
+                    $(layero).children('.layui-layer-content').css('overflow', 'visible');
+                }
+            });
+        }
+
+    });
+</script>

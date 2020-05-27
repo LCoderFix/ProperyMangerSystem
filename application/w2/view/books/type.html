@@ -1,0 +1,102 @@
+{include file="comm/header"}
+<!-- 正文开始 -->
+<div class="layui-fluid">
+    <div class="layui-card">
+        <div class="layui-card-body table-tool-mini full-table">
+            <div class="layui-form toolbar">
+                <div class="layui-form-item">
+                    <div class="layui-inline">
+                        <button id="addType" class="layui-btn layui-btn-sm"><i class="layui-icon layui-icon-add-1"></i>添加
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <table id="table" lay-filter="table"></table>
+        </div>
+    </div>
+</div>
+<script type="text/html" id="barType">
+    <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="edit">修改</a>
+    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+</script>
+{include file="comm/footer"}
+<script>
+    layui.use(['layer', 'form', 'table', 'util', 'admin'], function () {
+        var $ = layui.jquery;
+        var layer = layui.layer;
+        var form = layui.form;
+        var table = layui.table;
+        var util = layui.util;
+        var admin = layui.admin;
+
+        // 渲染表格
+        var insTb = table.render({
+            elem: '#table',
+            //url: '/w2/books/typedata',
+            //url如果没有写模块和控制进默认为当前模块和当前控制器
+            url:'{:url("type")}',  //https://www.kancloud.cn/manual/thinkphp5/118041
+            even: true,
+            cols: [[
+                {type: 'checkbox'}
+                ,{type: 'numbers',title:'序号'}
+                ,{field: 'type_name',title:'类别名',align:'center'}
+                ,{title:'操作',align:'center',toolbar: '#barType'}
+            ]]
+        });
+
+        // 添加按钮点击事件
+        $('#addType').click(function () {
+            doEdit();
+        });
+
+        /* 显示表单弹窗 */
+        function doEdit(data) {
+            var layIndex = admin.open({
+                title: (data ? '修改' : '添加') + '图书类别',
+                url: "{:url('typeForm')}",
+                data: {data: data},     // 传递数据到表单页面
+                end: function () {
+                    if (admin.getLayerData(layIndex, 'formOk')) {  // 判断表单操作成功标识
+                        insTb.reload();  // 成功刷新表格
+                    }
+                },
+                success: function (layero, dIndex) {
+                    // 弹窗超出范围不出现滚动条
+                    $(layero).children('.layui-layer-content').css('overflow', 'visible');
+                }
+            });
+        }
+
+        /* 表格工具条点击事件 */
+        table.on('tool(table)', function (obj) {
+            if (obj.event === 'edit') { // 修改
+                doEdit(obj.data);
+            } else if (obj.event === 'del') { // 删除
+                doDel(obj.data.type_id, obj.data.type_name);
+            }
+        });
+
+        /* 删除 */
+        function doDel(id, name) {
+            layer.confirm('确定要删除“' + name + '”吗？', {
+                skin: 'layui-layer-admin',
+                shade: .1
+            }, function (index) {
+                layer.close(index);
+                layer.load(2);  //加载操作提示
+                $.post("{:url('typeDel')}", {
+                    id: id
+                }, function (res) {
+                    layer.closeAll('loading');
+                    if (res.code === 1) {
+                        layer.msg(res.msg, {icon: 1});
+                        insTb.reload({}, 'data');
+                    } else {
+                        layer.msg(res.msg, {icon: 2});
+                    }
+                }, 'json');
+            });
+        }
+        
+    });
+</script>

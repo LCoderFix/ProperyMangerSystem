@@ -1,0 +1,100 @@
+{include file="comm/header"}
+<div class="layui-fluid">
+    <div class="layui-card">
+        <form id="form" lay-filter="form" class="layui-form model-form">
+            <input name="news_id" type="hidden"/>
+            <div class="layui-form-item">
+                <label class="layui-form-label">新闻标题：</label>
+                <div class="layui-input-block">
+                    <input type="text" name="title"  class="layui-input" lay-verType="tips"
+                           lay-verify="required" required>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label">新闻类别：</label>
+                    <div class="layui-input-inline">
+                        <select name="type_id" lay-verType="tips" lay-verify="required" required>
+                            &lt;!&ndash;<option value="">请选择</option>&ndash;&gt;
+                            {volist name="list" id="vo"}
+                            <option value="{$vo.type_id}">{$vo.type_name}</option>
+                            {/volist}
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">属性：</label>
+                    <div class="layui-input-block">
+                        <input type="radio" name="status" value="1" title="正常" checked>
+                        <input type="radio" name="status" value="2" title="至顶">
+                        <input type="radio" name="status" value="0" title="隐藏">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">发布时间：</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="create_time" id="create_time" class="layui-input" lay-verType="tips"
+                               lay-verify="required" required>
+                    </div>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">新闻内容：</label>
+                <div class="layui-input-block">
+                    <textarea type="text" name="content" id="content"
+                              placeholder="请输入内容">{$content}</textarea>
+                </div>
+            </div>
+            <div class="layui-form-item text-right">
+                <a href="{:url('index')}" class="layui-btn layui-btn-primary">返回</a>
+                <button class="layui-btn" lay-filter="save" lay-submit>保存</button>
+            </div>
+
+        </form>
+    </div>
+</div>
+{include file="comm/footer"}
+<script type="text/javascript" charset="utf-8" src="/static/ueditor/ueditor.config.js"></script>
+<script type="text/javascript" charset="utf-8" src="/static/ueditor/ueditor.all.min.js"></script>
+<script type="text/javascript" charset="utf-8" src="/static/ueditor/lang/zh-cn/zh-cn.js"></script>
+<script type="text/javascript">
+    var url = "{:url('Ueditor/index')}";
+    var ue = UE.getEditor('content', {
+        initialFrameHeight: 250,
+        zIndex: 100
+    });
+</script>
+<script>
+    layui.use(['layer', 'form', 'layedit','laydate'], function () {
+        var $ = layui.jquery;
+        var layer = layui.layer;
+        var form = layui.form;
+        var layedit = layui.layedit;
+        var laydate=layui.laydate;
+
+        laydate.render({elem: '#create_time', type: 'datetime', value: new Date()});
+        // 回显数据
+        form.val('form', {$data});
+        // 表单提交事件
+        form.on('submit(save)', function (data) {
+            layer.load(2);
+            var url = "{:url('newsForm')}";
+            $.post(url, data.field, function (res) {
+                layer.closeAll('loading');
+                if (res.code == 1) {
+                    layer.msg(res.msg, {
+                        icon: 1,//提示的样式
+                        time: 2000, 
+                        end:function(){
+                            location.href="{:url('index')}";
+                        }
+                    });
+                } else {
+                    layer.msg(res.msg, {icon: 2});
+                }
+            }, 'json');
+            return false;
+        });
+
+    });
+</script>

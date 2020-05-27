@@ -1,0 +1,6 @@
+c;_qjC7+l9Pk
+
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION;
+
+root
+XoV4aZy7Sp5BO2av

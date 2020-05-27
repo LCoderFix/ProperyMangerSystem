@@ -1,0 +1,146 @@
+{include file="comm/header"}
+<div class="layui-fluid">
+    <div class="layui-card">
+        <div class="layui-card-body">
+            <div class="layui-form toolbar">
+                <div class="layui-form-item">
+                    <div class="layui-inline">
+                        <button id="addRole" class="layui-btn layui-btn-sm"><i class="layui-icon layui-icon-add-1"></i>添加
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <table id="roleTable" lay-filter="roleTable"></table>
+        </div>
+    </div>
+</div>
+
+<!-- 表格操作列 -->
+<script type="text/html" id="tableBarRole">
+    <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="edit">修改</a>
+    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+    <a class="layui-btn layui-btn-warm layui-btn-xs" lay-event="menu">菜单分配</a>
+</script>
+{include file="comm/footer"}
+<script>
+    layui.use(['layer', 'form', 'table', 'util', 'admin', 'zTree'], function () {
+        var $ = layui.jquery;
+        var layer = layui.layer;
+        var form = layui.form;
+        var table = layui.table;
+        var util = layui.util;
+        var admin = layui.admin;
+
+        /* 渲染表格 */
+        var insTb = table.render({
+            elem: '#roleTable',
+            url: '{:url("index")}',
+            page: true,
+            cellMinWidth: 100,
+            cols: [[
+                {type: 'checkbox'},
+                {type: 'numbers'},
+                {field: 'name', title: '角色名'},
+                {field: 'role_key', title: '角色代码'},
+                {title: '操作', toolbar: '#tableBarRole', align: 'center', width: 200, minWidth: 200}
+            ]]
+        });
+
+        // 添加按钮点击事件
+        $('#addRole').click(function () {
+            doEdit();
+        });
+
+        /* 表格工具条点击事件 */
+        table.on('tool(roleTable)', function (obj) {
+            if (obj.event === 'edit') { // 修改
+                doEdit(obj.data);
+            } else if (obj.event === 'del') { // 删除
+                doDel(obj.data.role_id, obj.data.name);
+            } else if (obj.event === 'menu') {  // 菜单管理
+                doMenu(obj.data.role_id);
+            }
+        });
+
+        /* 显示表单弹窗 */
+        function doEdit(data) {
+            var layIndex = admin.open({
+                title: (data ? '修改' : '添加') + '角色',
+                url: "{:url('roleForm')}",
+                data: {data: data},     // 传递数据到表单页面
+                end: function () {
+                    if (admin.getLayerData(layIndex, 'formOk')) {  // 判断表单操作成功标识
+                        insTb.reload();  // 成功刷新表格
+                    }
+                },
+                success: function (layero, dIndex) {
+                    // 弹窗超出范围不出现滚动条
+                    $(layero).children('.layui-layer-content').css('overflow', 'visible');
+                }
+            });
+        }
+
+        /* 删除 */
+        function doDel(role_id, name) {
+            layer.confirm('确定要删除“' + name + '”吗？', {
+                skin: 'layui-layer-admin',
+                shade: .1
+            }, function (index) {
+                layer.close(index);
+                layer.load(2);
+                $.post("{:url('roleDel')}", {
+                    role_id: role_id
+                }, function (res) {
+                    layer.closeAll('loading');
+                    if (res.code === 1) {
+                        layer.msg(res.msg, {icon: 1});
+                        insTb.reload({}, 'data');
+                    } else {
+                        layer.msg(res.msg, {icon: 2});
+                    }
+                }, 'json');
+            });
+        }
+
+        /* 菜单分配 */
+        function doMenu(role_id) {
+            admin.open({
+                title: '角色菜单分配',
+                btn: ['保存', '取消'],
+                content: '<ul id="roleMenuTree" class="ztree"></ul>',
+                success: function (layero, dIndex) {
+                    var loadIndex = layer.load(2);
+                    $.get('{:url("roleTree")}', {role_id: role_id}, function (res) {
+                        layer.close(loadIndex);
+                        $.fn.zTree.init($('#roleMenuTree'), {
+                            check: {enable: true},
+                            data: {simpleData: {enable: true,idKey: "menu_id",pIdKey: "parent_id"}}
+                        }, res.data);
+                    }, 'json');
+                    // 超出一定高度滚动
+                    $(layero).children('.layui-layer-content').css({'max-height': '300px', 'overflow': 'auto'});
+                },
+                yes: function (dIndex) {
+                    var insTree = $.fn.zTree.getZTreeObj('roleMenuTree');
+                    var checkedRows = insTree.getCheckedNodes(true);
+                    var ids = [];
+                    for (var i = 0; i < checkedRows.length; i++) {
+                        ids.push(checkedRows[i].menu_id);
+                    }
+                    var loadIndex = layer.load(2);
+                    $.post('{:url("roleForm")}', {role_id: role_id, menus: ids.join(',')+','}, function (res) {
+                        layer.close(loadIndex);
+                        if (1 === res.code) {
+                            layer.msg(res.msg, {icon: 1});
+                            layer.close(dIndex);
+                        } else {
+                            layer.msg(res.msg, {icon: 2});
+                        }
+                    }, 'json');
+                }
+            });
+        }
+
+    });
+</script>

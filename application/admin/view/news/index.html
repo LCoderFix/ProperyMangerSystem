@@ -1,0 +1,100 @@
+{include file="comm/header"}
+<!-- 正文开始 -->
+<div class="layui-fluid">
+    <div class="layui-card">
+        <div class="layui-card-body table-tool-mini full-table">
+            <div class="layui-form toolbar">
+                <div class="layui-form-item">
+                    <div class="layui-inline" style="padding-right: 110px;">
+                        <a href="{:url('newsForm')}" class="layui-btn"><i class="layui-icon layui-icon-add-1"></i>添加新闻</a>
+                    </div>
+                </div>
+            </div>
+
+            <table id="tableNews" lay-filter="tableNews"></table>
+        </div>
+    </div>
+</div>
+
+<!-- 表格操作列 -->
+<script type="text/html" id="tableBarNews">
+    <a href="{:url('newsForm')}?news_id={{d.news_id}}" class="layui-btn layui-btn-primary layui-btn-xs">编辑</a>
+    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+</script>
+
+{include file="comm/footer"}
+<script>
+    layui.use(['layer','jquery', 'form', 'table', 'util', 'admin'], function () {
+        var $ = layui.jquery;
+        var layer = layui.layer;
+        var form = layui.form;
+        var table = layui.table;
+        var util = layui.util;
+        var admin = layui.admin;
+
+        // 渲染表格
+        var insTb = table.render({
+            elem: '#tableNews',
+            url: '{:url("index")}',
+            page: true,
+            even: true,
+            limits: [10, 20, 50, 100],
+            limit: 10,
+            cols: [[
+                {type: 'numbers'},
+                {align: 'center', field: 'title', title: '标题'},
+                {align: 'center', field: 'type_name', title: '类别'},
+                {
+                    align: 'center',field: 'create_time', sort: true,
+                    title: '发布时间',
+                    templet: "<div>{{layui.util.toDateString(d.create_time*1000, 'yyyy-MM-dd HH:mm:ss')}}</div>"
+                },
+                {
+                    align: 'center', field: 'status', sort: true, title: '状态',
+                    templet: function (d) {
+                        if (d.status === 1) return '<span class="text-success">正常</span>';
+                        else if (d.status === 2) return '<span class="text-danger">至顶</span>';
+                        else if (d.status === 0) return '<span class="text-warning">隐藏</span>';
+                    }
+                },
+                {align: 'center', toolbar: '#tableBarNews', title: '操作', minWidth: 200}
+            ]]
+        });
+
+        // 搜索
+        form.on('submit(searchUser)', function (data) {
+            insTb.reload({where: data.field}, 'data');
+        });
+
+        // 工具条点击事件
+        table.on('tool(tableNews)', function (obj) {
+            var data = obj.data;
+            var layEvent = obj.event;
+            if (layEvent === 'del') { // 删除
+                doDel(data.news_id);
+            }
+        });
+
+        // 删除
+        function doDel(news_id) {
+            layer.confirm('确定要删除吗？', {
+                skin: 'layui-layer-admin',
+                shade: .1
+            }, function (index) {
+                layer.close(index);
+                layer.load(2);
+                $.post("{:url('newsDel')}", {
+                    news_id: news_id
+                }, function (res) {
+                    layer.closeAll('loading');
+                    if (res.code === 1) {
+                        layer.msg(res.msg, {icon: 1});
+                        insTb.reload({}, 'data');
+                    } else {
+                        layer.msg(res.msg, {icon: 2});
+                    }
+                }, 'json');
+            });
+        }
+    });
+</script>
