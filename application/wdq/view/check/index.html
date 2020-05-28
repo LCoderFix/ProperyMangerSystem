@@ -1,0 +1,200 @@
+{include file="comm/header"}
+<!-- 正文开始 -->
+<div class="layui-fluid">
+    <div class="layui-card">
+        <div class="layui-card-body table-tool-mini full-table">
+            <div class="layui-form toolbar">
+                <div class="layui-form-item">
+                    <div class="layui-inline">
+                        <input class="layui-input" name="key" placeholder="请输入关键字" autocomplete="off">
+                    </div>
+                    <div class="layui-inline" style="padding-right: 110px;">
+                        <button class="layui-btn icon-btn layui-btn-sm" lay-filter="searchUser" lay-submit>
+                            <i class="layui-icon">&#xe615;</i>搜索
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <table id="tableUser" lay-filter="tableUser"></table>
+        </div>
+    </div>
+</div>
+<script type="text/html" id="bookBar">
+    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+</script>
+<!-- 表格状态列 -->
+<script type="text/html" id="tableStatusUser">
+    <input type="checkbox" lay-filter="ckStatusUser" value="{{d.owner_id}}" lay-skin="switch"
+           lay-text="已认证|未认证" {{d.owner_certification==1?'checked':''}}/>
+</script>
+{include file="comm/footer"}
+<script>
+    layui.use(['layer', 'form', 'table', 'util', 'admin'], function () {
+        var $ = layui.jquery;
+        var layer = layui.layer;
+        var form = layui.form;
+        var table = layui.table;
+        var util = layui.util;
+        var admin = layui.admin;
+
+        // 渲染表格
+        var insTb = table.render({
+            elem: '#tableUser',
+            url: '{:url("index")}',
+            even: true,
+            page: true,  //开启分页
+            limits: [10, 20, 50, 100],
+            cols: [[
+                {type: 'checkbox'}
+                , {type: 'numbers', title: '序号'}
+                , {field: 'owner_id', title: '业主ID', align: 'center'}
+                , {field: 'owner_name', title: '业主姓名', align: 'center'}
+                , {field: 'owner_tel', title: '业主电话', align: 'center'}
+                , {field: 'owner_location', title: '业主位置', align: 'center'}
+                , {field: 'owner_balance', title: '物业费余额', align: 'center'}
+               ,{align: 'center', field: 'status', sort: true, templet: '#tableStatusUser', title: '认证情况'}
+                ,{
+                    align: 'center', field: 'ctime', sort: true, templet: function (d) {
+                        if (d.ctime != null)
+                            return layui.util.toDateString(d.create_time*1000, 'yyyy-MM-dd HH:mm:ss');
+                        else
+                            return "";
+                    }, title: '申请认证时间'
+                }
+                , {title: '操作', toolbar: '#bookBar', align: 'center',minWidth: 200}
+            ]]
+        });
+
+        /* 表格工具条点击事件 */
+        table.on('tool(tableUser)', function (obj) {
+            if (obj.event === 'edit') { // 修改
+                //obj.data
+                doEdit(obj.data);
+            } else if (obj.event === 'del') { // 删除
+                obj.data.owner_request=0;
+                doDel(obj.data);
+            }else if (obj.event === 'reset') { // 重置密码
+                resetPsw(obj.data.owner_id, obj.data.owner_name);
+            }
+        });
+        // 搜索
+        form.on('submit(searchUser)', function (data) {
+            insTb.reload({where: data.field}, 'data');
+        });
+        // 添加按钮点击事件
+        $('#addUser').click(function () {
+            // $data=[];
+            doEdit();
+        });
+        // 修改用户权限
+        form.on('switch(ckStatusUser)', function (obj) {
+            layer.load(2);
+            $.post('{:url("userCertification")}', {
+                owner_id: obj.elem.value,
+                status: obj.elem.checked ? 1 : 0
+            }, function (res) {
+                layer.closeAll('loading');
+                if (res.code === 1) {
+                    layer.msg(res.msg, {icon: 1});
+                    insTb.reload({}, 'data');
+                } else {
+                    layer.msg(res.msg, {icon: 2});
+                    $(obj.elem).prop('checked', !obj.elem.checked);
+                    form.render('checkbox');
+                }
+            }, 'json');
+        });
+        /* 显示表单弹窗 */
+        function doEdit(data) {
+        //    alert(data['manger_village_id']);
+            var data1=data;
+            $.ajax({
+                url: "{:url('ownerMaxId')}",
+                type: 'GET',
+                success: function (num) {
+                    $num = num;
+                    if (!data) {
+                        data=new Object();
+                        data['owner_id'] = $num + 1;
+                    }
+                    var layIndex = admin.open({
+                        title: (data1 ? '修改' : '添加') + '用户信息',
+                        url: "{:url('ownerForm')}",
+                        data: {data: data},     // 传递数据到表单页面
+                        end: function () {
+                            if (admin.getLayerData(layIndex, 'formOk')) {  // 判断表单操作成功标识
+                                insTb.reload();  // 成功刷新表格
+                            }
+                        },
+                        success: function (layero, dIndex) {
+                            // 弹窗超出范围不出现滚动条
+                            $(layero).children('.layui-layer-content').css('overflow', 'visible');
+                        }
+                    });
+                }
+            })
+
+        }
+
+
+        /* 删除 */
+        function doDel(data) {
+            layer.confirm('确定要拒绝该住户申请吗？', {
+                skin: 'layui-layer-admin',
+                shade: .1
+            }, function (index) {
+                layer.close(index);
+                layer.load(2);
+                $.post("{:url('checkDel')}", {
+                    data:data
+                }, function (res) {
+                    layer.closeAll('loading');
+                    if (res.code === 1) {
+                        layer.msg(res.msg, {icon: 1});
+                        insTb.reload({}, 'data');
+                    } else {
+                        layer.msg(res.msg, {icon: 2});
+                    }
+                }, 'json');
+            });
+        }
+
+        // 重置密码
+        function resetPsw(owner_id, username) {
+            layer.confirm('确定要重置“' + username + '”的登录密码吗？', {
+                skin: 'layui-layer-admin',
+                shade: .1
+            }, function (i) {
+                layer.close(i);
+                layer.load(2);
+                $.post("{:url('resetPwd')}", {
+                    owner_id: owner_id
+                }, function (res) {
+                    layer.closeAll('loading');
+                    layer.alert(res.msg, {icon: 1});
+                }, 'json');
+            });
+        }
+    });
+
+    // 修改用户状态
+    form.on('switch(ckStatusUser)', function (obj) {
+        layer.load(2);
+        $.post('{:url("userStatus")}', {
+            user_id: obj.elem.value,
+            status: obj.elem.checked ? 1 : 0
+        }, function (res) {
+            layer.closeAll('loading');
+            if (res.code === 1) {
+                layer.msg(res.msg, {icon: 1});
+            } else {
+                layer.msg(res.msg, {icon: 2});
+                $(obj.elem).prop('checked', !obj.elem.checked);
+                form.render('checkbox');
+            }
+        }, 'json');
+    });
+
+
+
+</script>

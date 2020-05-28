@@ -1,6 +1,6 @@
 <?php
 
-namespace app\admin\controller;
+namespace app\wdq\controller;
 
 use think\Db;
 
@@ -44,8 +44,8 @@ class Index extends Base
                 }
             }
         }
-        return json($menus);
 
+        return json($menus);
     }
 
     /**
@@ -71,6 +71,6 @@ class Index extends Base
      */
     public function logout(){
         session(null);
-        $this->redirect('login/index');
+        $this->redirect('admin/login/index');
     }
 }

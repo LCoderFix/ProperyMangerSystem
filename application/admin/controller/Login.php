@@ -24,6 +24,7 @@ class Login extends Controller
                 return $this->error('验证码错误');
             }*/
             $user = db('sys_user')->where('username', $data['username'])->find();
+            $propertyManger = db('property_manger')->where('manger_name', $data['username'])->find();
             if ($user) {
                 if ($user['status'] == 1 && $user['password'] == md5($data['password'])) {
                     session('username', $user['username']);
@@ -32,6 +33,15 @@ class Login extends Controller
                     session('role_id', $user['role_id']);
                     db('sys_user')->where('user_id', $user['user_id'])->update(['login_time' => time()]);
                     return $this->success('登录成功!', url('admin/index/index')); //信息正确
+                }else {
+                    return $this->error('用户名或者密码错误，重新输入!'); //密码错误
+                }
+            } elseif ($propertyManger) {
+                if ($propertyManger['manger_password'] == md5($data['password'])) {
+                    session('username', $propertyManger['manger_name']);
+                    session('user_id', $propertyManger['manger_id']);
+                    db('property_manger')->where('manger_id', $propertyManger['manger_id'])->update(['login_time' => time()]);
+                    return $this->success('登录成功!', url('wdq/index/index'));
                 } else {
                     return $this->error('用户名或者密码错误，重新输入!'); //密码错误
                 }
