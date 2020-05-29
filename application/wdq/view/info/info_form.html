@@ -1,17 +1,15 @@
-
 <form id="form" lay-filter="form" class="layui-form model-form">
-    <input name="manger_message_id" type="hidden"/>
+    <input name="owner_id" type="hidden"/>
     <div class="layui-form-item">
-        <label class="layui-form-label layui-form-required">公告内容</label>
+        <label class="layui-form-label layui-form-required">充值金额</label>
         <div class="layui-input-block">
-            <input name="content" placeholder="请输入内容" type="text" class="layui-input"
+            <input name="owner_balance" placeholder="请输入充值金额" type="text" class="layui-input"
                    lay-verType="tips" lay-verify="required" required/>
         </div>
 
         <!--input中的name的值一定要和数据库表中的字段名要一致-->
 
     </div>
-
     <div class="layui-form-item text-right">
         <button class="layui-btn layui-btn-primary" type="button" ew-event="closePageDialog">取消</button>
         <button class="layui-btn" lay-filter="save" lay-submit>保存</button>
@@ -32,7 +30,7 @@
         // 表单提交事件
         form.on('submit(save)', function (data) {
             layer.load(2);
-            $.post("{:url('announceForm')}", data.field, function (res) {
+            $.post("{:url('infoForm')}", data.field, function (res) {
                 layer.closeAll('loading');
                 if (res.code == 1) {
                     layer.msg(res.msg, {icon: 1});

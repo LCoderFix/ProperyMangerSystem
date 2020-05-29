@@ -56,14 +56,14 @@
                 , {field: 'owner_tel', title: '业主电话', align: 'center'}
                 , {field: 'owner_location', title: '业主位置', align: 'center'}
                 , {field: 'owner_balance', title: '物业费余额', align: 'center'}
-           //     ,{align: 'center', field: 'status', sort: true, templet: '#tableStatusUser', title: '认证情况'}
+             //   ,{align: 'center', field: 'status', sort: true, templet: '#tableStatusUser', title: '认证情况'}
                 ,{
                     align: 'center', field: 'ctime', sort: true, templet: function (d) {
                         if (d.ctime != null)
-                            return layui.util.toDateString(d.create_time*1000, 'yyyy-MM-dd HH:mm:ss');
+                            return layui.util.toDateString(d.ctime*1000, 'yyyy-MM-dd HH:mm:ss');
                         else
                             return "";
-                    }, title: '认证时间'
+                    }, title: '认证/申请认证时间'
                 }
                 , {title: '操作', toolbar: '#bookBar', align: 'center',minWidth: 200}
             ]]
@@ -77,7 +77,7 @@
             } else if (obj.event === 'del') { // 删除
                 doDel(obj.data.owner_id);
             }else if (obj.event === 'reset') { // 重置密码
-                resetPsw(obj.data.owner_id, obj.data.owner_name);
+                resetPsw(obj.data.manger_id, obj.data.manger_name);
             }
         });
         // 删除

@@ -15,16 +15,15 @@ class Announcement extends Base
             $key = $get['key'] ?? '';
             $limit = $get['limit'] ?? 10;
             $id=session('user_id');
+            $where['manger_message_id']=['<>',0];
             if ($key) {
-                $where['owner_name|owner_location|owner_id']=['like','%' . $key . '%'];
+                $where['manger_message_id|m.manger_id|content|p.manger_name']=['like','%' . $key . '%'];
             }
-            $manger_village=db('manger_village')->where('manger_id',$id)->find();
-            $where['owner_certification']=1;
-            $where['owner_village']=$manger_village['village_id'];
             //select book_name,type_name from book left join book_type on book.type_id=book_type.type_id
-            $list = db('owner')
+            $list = db('manger_message m')
+                ->join('property_manger p','p.manger_id=m.manger_id')
                 ->where($where)
-                ->order('owner.owner_id')
+                ->order('m.manger_message_id')
                 ->paginate($limit)  //分页
                 ->toArray(); //转换为数组
             return $this->showList($list);
@@ -35,17 +34,37 @@ class Announcement extends Base
     /**
      * 用户新增、编辑页面
      */
-    public function ownerForm()
+    public function announceForm()
     {
         if (request()->isPost()) {
             $data = input('post.');
+            $mangerVillage=db('manger_village')->where('manger_id',session('user_id'))->find();
+            $owner=db('owner')->where('owner_village',$mangerVillage['village_id'])->field('owner_id')->select();
+           // var_dump($owner);
+            $count=count($owner);
+
             //  var_dump($data);
-            $result=db("owner")->where('owner_id',$data['owner_id'])->find();
+            $result=db("manger_message")->where('manger_message_id',$data['manger_message_id'])->find();
             if(!$result){
-                db('owner')->insert($data);
+                $data['manger_id']=session('user_id');
+                $data['ctime']=time();
+                db('manger_message')->insert($data);
+                $data['message_from']=$data['manger_id'];
+                unset($data['manger_id']);
+                $data['village_id']=$mangerVillage['village_id'];
+                $data['type']=0;
+                $data['status']=0;
+                for ($i=0;$i<$count;$i++){
+                    $data['message_to']=$owner[$i]['owner_id'];
+                    db('message')->insert($data);
+                }
                 return $this->success('添加成功！');
             }else{
-                db('owner')->update($data);
+                $data['ctime']=time();
+              //  var_dump($data);
+                db('manger_message')->update($data);
+               db('message')->where('manger_message_id',$data['manger_message_id'])
+                   ->update(['content'=>$data['content'],'ctime'=>$data['ctime']]);
                 return $this->success('编辑成功！');
             }
         } else {
@@ -59,22 +78,23 @@ class Announcement extends Base
      * 取得用户最大Id值
      * @return mixed
      */
-    public function ownerMaxId(){
+    public function announceMaxId(){
         if($this->request->isAjax()){
-            $num = Db::query("select max(owner_id) from owner");
-            return $num[0]['max(owner_id)'];
+            $num = Db::query("select max(manger_message_id) from manger_message");
+            return $num[0]['max(manger_message_id)'];
         }
     }
 
     /**
-     * 删除用户
+     * 删除公告
      * @throws \think\Exception
      * @throws \think\exception\PDOException
      */
-    public function ownerDel()
+    public function msgDel()
     {
         //参数后加/a是因为前面批量删除时会传来数组，如[1,2]
-        db('owner')->delete(input('post.owner_id/a'));
+        db('manger_message')->delete(input('post.manger_message_id'));
+        db('message')->where('manger_message_id',input('post.manger_message_id'))->delete();
         return $this->success('删除成功!');
     }
     /**

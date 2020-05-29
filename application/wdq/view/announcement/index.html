@@ -13,7 +13,6 @@
                             <i class="layui-icon">&#xe615;</i>搜索
                         </button>
                         <button id="addUser" class="layui-btn icon-btn layui-btn-sm"><i class="layui-icon layui-icon-add-1"></i>添加</button>
-                        <button id="delUser" class="layui-btn icon-btn layui-btn-sm"><i class="layui-icon layui-icon-delete"></i>删除</button>
                     </div>
                 </div>
             </div>
@@ -24,7 +23,6 @@
 <script type="text/html" id="bookBar">
     <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="edit">修改</a>
     <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
-    <a class="layui-btn layui-btn-xs" lay-event="reset">重置密码</a>
 </script>
 <!-- 表格状态列 -->
 <script type="text/html" id="tableStatusUser">
@@ -51,19 +49,17 @@
             cols: [[
                 {type: 'checkbox'}
                 , {type: 'numbers', title: '序号'}
-                , {field: 'owner_id', title: '业主ID', align: 'center'}
-                , {field: 'owner_name', title: '业主姓名', align: 'center'}
-                , {field: 'owner_tel', title: '业主电话', align: 'center'}
-                , {field: 'owner_location', title: '业主位置', align: 'center'}
-                , {field: 'owner_balance', title: '物业费余额', align: 'center'}
+                , {field: 'manger_message_id', title: '公告ID', align: 'center'}
+                , {field: 'manger_name', title: '管理员姓名', align: 'center'}
+                , {field: 'content', title: '公告内容', align: 'center'}
            //     ,{align: 'center', field: 'status', sort: true, templet: '#tableStatusUser', title: '认证情况'}
                 ,{
                     align: 'center', field: 'ctime', sort: true, templet: function (d) {
                         if (d.ctime != null)
-                            return layui.util.toDateString(d.create_time*1000, 'yyyy-MM-dd HH:mm:ss');
+                            return layui.util.toDateString(d.ctime*1000, 'yyyy-MM-dd HH:mm:ss');
                         else
                             return "";
-                    }, title: '认证时间'
+                    }, title: '发布时间'
                 }
                 , {title: '操作', toolbar: '#bookBar', align: 'center',minWidth: 200}
             ]]
@@ -75,7 +71,7 @@
                 //obj.data
                 doEdit(obj.data);
             } else if (obj.event === 'del') { // 删除
-                doDel(obj.data.owner_id);
+                doDel(obj.data.manger_message_id);
             }else if (obj.event === 'reset') { // 重置密码
                 resetPsw(obj.data.owner_id, obj.data.owner_name);
             }
@@ -107,17 +103,17 @@
         //    alert(data['manger_village_id']);
             var data1=data;
             $.ajax({
-                url: "{:url('ownerMaxId')}",
+                url: "{:url('announceMaxId')}",
                 type: 'GET',
                 success: function (num) {
                     $num = num;
                     if (!data) {
                         data=new Object();
-                        data['owner_id'] = $num + 1;
+                        data['manger_message_id'] = $num + 1;
                     }
                     var layIndex = admin.open({
                         title: (data1 ? '修改' : '添加') + '用户信息',
-                        url: "{:url('ownerForm')}",
+                        url: "{:url('announceForm')}",
                         data: {data: data},     // 传递数据到表单页面
                         end: function () {
                             if (admin.getLayerData(layIndex, 'formOk')) {  // 判断表单操作成功标识
@@ -136,15 +132,15 @@
 
 
         /* 删除 */
-        function doDel(owner_id) {
+        function doDel(manger_message_id) {
             layer.confirm('确定要删除选中数据吗？', {
                 skin: 'layui-layer-admin',
                 shade: .1
             }, function (index) {
                 layer.close(index);
                 layer.load(2);
-                $.post("{:url('ownerDel')}", {
-                    owner_id:owner_id
+                $.post("{:url('msgDel')}", {
+                    manger_message_id:manger_message_id
                 }, function (res) {
                     layer.closeAll('loading');
                     if (res.code === 1) {
