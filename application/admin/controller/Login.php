@@ -25,6 +25,7 @@ class Login extends Controller
             }*/
             $user = db('sys_user')->where('username', $data['username'])->find();
             $propertyManger = db('property_manger')->where('manger_name', $data['username'])->find();
+            $owner=db('owner')->where('owner_name',$data['username'])->find();
             if ($user) {
                 if ($user['status'] == 1 && $user['password'] == md5($data['password'])) {
                     session('username', $user['username']);
