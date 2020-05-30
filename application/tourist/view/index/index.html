@@ -44,7 +44,7 @@
                     <cite>当前用户：{:session('username')}</cite>
                 </a>
                 <dl class="layui-nav-child">
-                    <dd lay-unselect><a ew-href="{:url('mine/userInfo')}">个人中心</a></dd>
+                    <dd lay-unselect><a ew-href="{:url('user/userInfo')}">个人中心</a></dd>
                     <dd lay-unselect><a href="javascript:;" id="modiPwd">修改密码</a></dd>
                     <hr>
                     <dd lay-unselect><a id="logout" href="{:url('index/logout')}"><i class="fa fa-sign-out fa-lg"></i><cite>退出</cite></a></dd>
@@ -150,7 +150,7 @@
         $("#modiPwd").click(function(){
             var layIndex = admin.open({
                 title: '修改密码',
-                url: "{:url('mine/userPwd')}",
+                url: "{:url('user/userPwd')}",
                 end: function () {
                     layer.close(layIndex);
                 },

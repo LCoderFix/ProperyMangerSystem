@@ -1,0 +1,202 @@
+{include file="comm/header"}
+<!-- 正文开始 -->
+<div class="layui-fluid">
+    <div class="layui-card">
+        <div class="layui-card-body table-tool-mini full-table">
+            <div class="layui-form toolbar">
+                <div class="layui-form-item">
+                    <div class="layui-inline">
+                        <input class="layui-input" name="key" placeholder="请输入关键字" autocomplete="off">
+                    </div>
+                    <div class="layui-inline">
+                        <select name="role" id="role">
+                            <option value="">请选择角色</option>
+                            {volist name="list" id="vo"}
+                            <option value="{$vo.role_id}">{$vo.name}</option>
+                            {/volist}
+                        </select>
+                    </div>
+                    <div class="layui-inline" style="padding-right: 110px;">
+                        <button class="layui-btn icon-btn layui-btn-sm" lay-filter="searchUser" lay-submit>
+                            <i class="layui-icon">&#xe615;</i>搜索
+                        </button>
+                        <button id="addUser" class="layui-btn icon-btn layui-btn-sm"><i class="layui-icon layui-icon-add-1"></i>添加</button>
+                        <button id="delUser" class="layui-btn icon-btn layui-btn-sm"><i class="layui-icon layui-icon-delete"></i>删除</button>
+                    </div>
+                </div>
+            </div>
+
+            <table id="tableUser" lay-filter="tableUser"></table>
+        </div>
+    </div>
+</div>
+
+
+<!-- 表格操作列 -->
+<script type="text/html" id="tableBarUser">
+    <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="edit">修改</a>
+    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+    <a class="layui-btn layui-btn-xs" lay-event="reset">重置密码</a>
+</script>
+<!-- 表格状态列 -->
+<script type="text/html" id="tableStatusUser">
+    <input type="checkbox" lay-filter="ckStatusUser" value="{{d.user_id}}" lay-skin="switch"
+           lay-text="正常|锁定" {{d.status==1?'checked':''}}/>
+</script>
+
+{include file="comm/footer"}
+<script>
+    layui.use(['layer', 'form', 'table', 'util', 'admin'], function () {
+        var $ = layui.jquery;
+        var layer = layui.layer;
+        var form = layui.form;
+        var table = layui.table;
+        var util = layui.util;
+        var admin = layui.admin;
+
+        // 渲染表格
+        var insTb = table.render({
+            elem: '#tableUser',
+            url: '{:url("index")}',
+            page: true,
+            even: true,
+            limits: [10, 20, 50, 100],
+            limit: 10,
+            cols: [[
+                {type: 'checkbox'},
+                {type: 'numbers'},
+                {align: 'center', field: 'username', title: '用户名'},
+                {align: 'center', field: 'realname', title: '姓名'},
+                {align: 'center', field: 'name', title: '角色'},
+                {
+                    align: 'center', field: 'login_time', sort: true, templet: function (d) {
+                        if (d.login_time != null)
+                            return layui.util.toDateString(d.create_time*1000, 'yyyy-MM-dd HH:mm:ss');
+                        else
+                            return "";
+                    }, title: '最后登录时间'
+                },
+                {align: 'center', field: 'status', sort: true, templet: '#tableStatusUser', title: '状态'},
+                {align: 'center', toolbar: '#tableBarUser', title: '操作', minWidth: 200}
+            ]]
+        });
+
+        // 添加
+        $('#addUser').click(function () {
+            doEdit();
+        });
+
+        // 删除
+
+        $('#delUser').click(function () {
+            var checkRows = table.checkStatus('tableUser');
+            if (checkRows.data.length === 0) {
+                layer.msg('请选择要删除的数据', {icon: 2});
+                return;
+            }
+            var ids = checkRows.data.map(function (d) {
+                return d.user_id;
+            });
+            console.log(ids);
+            doDel(ids);
+        });
+
+        // 搜索
+        form.on('submit(searchUser)', function (data) {
+            insTb.reload({where: data.field}, 'data');
+        });
+
+        // 工具条点击事件
+        table.on('tool(tableUser)', function (obj) {
+            var data = obj.data;
+            var layEvent = obj.event;
+            if (layEvent === 'edit') { // 修改
+                doEdit(data);
+            } else if (layEvent === 'del') { // 删除
+                doDel(data.user_id, data.username);
+            } else if (layEvent === 'reset') { // 重置密码
+                resetPsw(data.user_id, data.username);
+            }
+        });
+
+        function doEdit(data) {
+            //添加id的目的为防止用户编辑时显示用户密码
+            var id = 0;
+            if (data) id = data.user_id;
+
+            var layIndex = admin.open({
+                title: (data ? '修改' : '添加') + '用户',
+                url: "{:url('userForm')}?user_id=" + id,
+                data: {data: data},     // 传递数据到表单页面
+                end: function () {
+                    if (admin.getLayerData(layIndex, 'formOk')) {  // 判断表单操作成功标识
+                        insTb.reload();  // 成功刷新表格
+                    }
+                },
+                success: function (layero, dIndex) {
+                    // 弹窗超出范围不出现滚动条
+                    $(layero).children('.layui-layer-content').css('overflow', 'visible');
+                }
+            });
+        }
+
+
+        // 删除
+        function doDel(user_id) {
+            layer.confirm('确定要删除选中数据吗？', {
+                skin: 'layui-layer-admin',
+                shade: .1
+            }, function (index) {
+                layer.close(index);
+                layer.load(2);
+                $.post("{:url('userDel')}", {
+                    user_id: user_id
+                }, function (res) {
+                    layer.closeAll('loading');
+                    if (res.code === 1) {
+                        layer.msg(res.msg, {icon: 1});
+                        insTb.reload({}, 'data');
+                    } else {
+                        layer.msg(res.msg, {icon: 2});
+                    }
+                }, 'json');
+            });
+        }
+
+        // 修改用户状态
+        form.on('switch(ckStatusUser)', function (obj) {
+            layer.load(2);
+            $.post('{:url("userStatus")}', {
+                user_id: obj.elem.value,
+                status: obj.elem.checked ? 1 : 0
+            }, function (res) {
+                layer.closeAll('loading');
+                if (res.code === 1) {
+                    layer.msg(res.msg, {icon: 1});
+                } else {
+                    layer.msg(res.msg, {icon: 2});
+                    $(obj.elem).prop('checked', !obj.elem.checked);
+                    form.render('checkbox');
+                }
+            }, 'json');
+        });
+
+        // 重置密码
+        function resetPsw(user_id, username) {
+            alert(1);
+            layer.confirm('确定要重置“' + username + '”的登录密码吗？', {
+                skin: 'layui-layer-admin',
+                shade: .1
+            }, function (i) {
+                layer.close(i);
+                layer.load(2);
+                $.post("{:url('resetPwd')}", {
+                    user_id: user_id
+                }, function (res) {
+                    layer.closeAll('loading');
+                    layer.alert(res.msg, {icon: 1});
+                }, 'json');
+            });
+        }
+    });
+</script>

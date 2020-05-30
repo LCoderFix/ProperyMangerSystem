@@ -19,6 +19,7 @@ class UpFiles extends Base
             $result['info'] = '图片上传成功!';
             $path = str_replace('\\', '/', $info->getSaveName());
             $result['url'] = '/uploads/' . $path;
+            db('sys_user')->where('user_id',session('user_id'))->update(['avatar'=>$result['url']]);
             return $result;
         } else {
             // 上传失败获取错误信息
@@ -42,6 +43,7 @@ class UpFiles extends Base
             $path = str_replace('\\', '/', $info->getSaveName());
 
             $result['url'] = '/uploads/' . $path;
+
             $result['ext'] = $info->getExtension();
             $result['size'] = byte_format($info->getSize(), 2);
             return $result;

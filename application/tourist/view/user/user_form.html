@@ -1,0 +1,68 @@
+<form id="form" lay-filter="form" class="layui-form model-form">
+    <input name="user_id" type="hidden"/>
+    <div class="layui-form-item">
+        <label class="layui-form-label layui-form-required">用户名</label>
+        <div class="layui-input-block">
+            <input name="username" autocomplete="off" class="layui-input" placeholder="请输入用户名" lay-verType="tips" lay-verify="required"
+                   required/>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">姓名</label>
+        <div class="layui-input-block">
+            <input name="realname" autocomplete="off" class="layui-input" placeholder="请输入用户姓名"/>
+        </div>
+    </div>
+    {if condition="($new == 0)"}
+    <div class="layui-form-item">
+        <label class="layui-form-label layui-form-required">密码</label>
+        <div class="layui-input-block">
+            <input name="password" autocomplete="off" value="1" class="layui-input" lay-verType="tips" lay-verify="required"
+                   required placeholder="请输入密码"/>
+        </div>
+    </div>
+    {/if}
+    <div class="layui-form-item">
+        <label class="layui-form-label">用户角色</label>
+        <div class="layui-input-block">
+            <select name="role_id" lay-verify="required"  id="role_id">
+                {volist name="list" id="vo"}
+                <option value="{$vo.role_id}">{$vo.name}</option>
+                {/volist}
+            </select>
+        </div>
+    </div>
+    <div class="layui-form-item text-right">
+        <button class="layui-btn layui-btn-primary" type="button" ew-event="closePageDialog">取消</button>
+        <button class="layui-btn" lay-filter="save" lay-submit>保存</button>
+    </div>
+</form>
+
+<script>
+    layui.use(['layer', 'form', 'admin'], function () {
+        var $ = layui.jquery;
+        var layer = layui.layer;
+        var form = layui.form;
+        var admin = layui.admin;
+
+        var data = admin.getLayerData('#form').data;  // 列表页面传递的数据
+        // 回显数据
+        form.val('form', data);
+        // 表单提交事件
+        form.on('submit(save)', function (data) {
+            layer.load(2);
+            $.post("{:url('userForm')}", data.field, function (res) {
+                layer.closeAll('loading');
+                if (res.code == 1) {
+                    layer.msg(res.msg, {icon: 1});
+                    admin.putLayerData('formOk', true, '#form');  // 设置操作成功的标识
+                    admin.closeDialog('#form');  // 关闭页面层弹窗
+                } else {
+                    layer.msg(res.msg, {icon: 2});
+                }
+            }, 'json');
+            return false;
+        });
+
+    });
+</script>
