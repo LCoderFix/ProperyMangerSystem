@@ -1,12 +1,12 @@
 <?php
 
 
-namespace app\wdq\controller;
+namespace app\zouhan\controller;
 
 
-use app\admin\controller\Base;
+use think\Db;
 
-class Info extends Base
+class Announce extends Base
 {
     public function index(){
         if (request()->isAjax()) {
@@ -14,16 +14,17 @@ class Info extends Base
             $key = $get['key'] ?? '';
             $limit = $get['limit'] ?? 10;
             $id=session('user_id');
+            $where['message_id']=['<>',0];
+            $where['message_to']=session('user_id');
+            $where['type']=0;
             if ($key) {
-                $where['owner_name|owner_location|owner_id']=['like','%' . $key . '%'];
+                $where['manger_name|content']=['like','%' . $key . '%'];
             }
-            $manger_village=db('manger_village')->where('manger_id',$id)->find();
-            $where['owner_certification']=1;
-            $where['owner_village']=$manger_village['village_id'];
             //select book_name,type_name from book left join book_type on book.type_id=book_type.type_id
-            $list = db('owner')
+            $list = db('message m')
+                ->join('property_manger p','p.manger_id=m.message_from')
                 ->where($where)
-                ->order('owner.owner_id')
+                ->order('m.message_id')
                 ->paginate($limit)  //分页
                 ->toArray(); //转换为数组
             return $this->showList($list);
@@ -34,20 +35,38 @@ class Info extends Base
     /**
      * 用户新增、编辑页面
      */
-    public function infoForm()
+    public function announceForm()
     {
         if (request()->isPost()) {
             $data = input('post.');
+            $mangerVillage=db('manger_village')->where('manger_id',session('user_id'))->find();
+            $owner=db('owner')->where('owner_village',$mangerVillage['village_id'])->field('owner_id')->select();
+            // var_dump($owner);
+            $count=count($owner);
+
             //  var_dump($data);
-            $result=db("owner")->where('owner_id',$data['owner_id'])->find();
+            $result=db("manger_message")->where('manger_message_id',$data['manger_message_id'])->find();
             if(!$result){
+                $data['manger_id']=session('user_id');
+                $data['ctime']=time();
+                db('manger_message')->insert($data);
+                $data['message_from']=$data['manger_id'];
+                unset($data['manger_id']);
+                $data['village_id']=$mangerVillage['village_id'];
+                $data['type']=0;
+                $data['status']=0;
+                for ($i=0;$i<$count;$i++){
+                    $data['message_to']=$owner[$i]['owner_id'];
+                    db('message')->insert($data);
+                }
                 return $this->success('添加成功！');
             }else{
+                $data['ctime']=time();
                 //  var_dump($data);
-                $owner=db('owner')->where('owner_id',$data['owner_id'])->find();
-                db('owner')->where('owner_id',$data['owner_id'])
-                    ->update(['owner_balance'=>$owner['owner_balance']+$data['owner_balance']]);
-                return $this->success('充值成功！');
+                db('manger_message')->update($data);
+                db('message')->where('manger_message_id',$data['manger_message_id'])
+                    ->update(['content'=>$data['content'],'ctime'=>$data['ctime']]);
+                return $this->success('编辑成功！');
             }
         } else {
             $list = db('owner')->select();
@@ -90,15 +109,14 @@ class Info extends Base
         return $this->success('重置密码成功，新密码为1!');
     }
     //更新用户权限
-    public function userPermission()
+    public function announceStatus()
     {
         $status = input('post.status');
         // var_dump($status.input('post.manger_id'));
-        if (db('property_manger')->where('manger_id', input('post.manger_id'))->update(['manger_permission' => $status]) !== false) {
+        if (db('message')->where('message_id', input('post.message_id'))->update(['status' => $status]) !== false) {
             return $this->success('设置成功!');
         } else {
             return $this->error('设置失败!');
         }
     }
-
 }

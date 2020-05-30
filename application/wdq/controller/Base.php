@@ -30,6 +30,7 @@ class Base extends Controller
             //当前用户权限
             if (!cache('role_menu_' . 15)) {
              //   var_dump('1111');
+
                 $menus = db('sys_role')
                     ->where('role_id', '15')
                     ->value('menus');

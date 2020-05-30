@@ -25,7 +25,7 @@ class Login extends Controller
             }*/
             $user = db('sys_user')->where('username', $data['username'])->find();
             $propertyManger = db('property_manger')->where('manger_name', $data['username'])->find();
-            $owner=db('owner')->where('owner_name',$data['username'])->find();
+            $owner = db('owner')->where('owner_name', $data['username'])->find();
             if ($user) {
                 if ($user['status'] == 1 && $user['password'] == md5($data['password'])) {
                     session('username', $user['username']);
@@ -34,7 +34,7 @@ class Login extends Controller
                     session('role_id', $user['role_id']);
                     db('sys_user')->where('user_id', $user['user_id'])->update(['login_time' => time()]);
                     return $this->success('登录成功!', url('admin/index/index')); //信息正确
-                }else {
+                } else {
                     return $this->error('用户名或者密码错误，重新输入!'); //密码错误
                 }
             } elseif ($propertyManger) {
@@ -43,6 +43,15 @@ class Login extends Controller
                     session('user_id', $propertyManger['manger_id']);
                     db('property_manger')->where('manger_id', $propertyManger['manger_id'])->update(['login_time' => time()]);
                     return $this->success('登录成功!', url('wdq/index/index'));
+                } else {
+                    return $this->error('用户名或者密码错误，重新输入!'); //密码错误
+                }
+            } elseif ($owner) {
+                if ($owner['owner_password'] == md5($data['password'])) {
+                    session('username', $owner['owner_name']);
+                    session('user_id', $owner['owner_id']);
+                    session('role_id', '16');
+                    return $this->success('登录成功!', url('zouhan/index/index'));
                 } else {
                     return $this->error('用户名或者密码错误，重新输入!'); //密码错误
                 }

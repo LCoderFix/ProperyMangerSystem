@@ -1,7 +1,7 @@
 <?php
 
 
-namespace app\wdq\controller;
+namespace app\zouhan\controller;
 
 
 use app\wdq\controller\Base;
@@ -18,8 +18,7 @@ class Order extends Base
             if ($key) {
                 $where['owner_name']=['like','%' . $key . '%'];
             }
-            $manger_village=db('manger_village')->where('manger_id',$id)->find();
-            $where['owner_village']=$manger_village['village_id'];
+           $where['o.owner_id']=session('user_id');
            // $where['order.status']=0;
             //select book_name,type_name from book left join book_type on book.type_id=book_type.type_id
             $list = db('t_order')
@@ -38,21 +37,28 @@ class Order extends Base
     /**
      * 用户新增、编辑页面
      */
-    public function ownerForm()
+    public function orderForm()
     {
         if (request()->isPost()) {
             $data = input('post.');
             //  var_dump($data);
-            $result=db("owner")->where('owner_id',$data['owner_id'])->find();
+            $result=db("t_order")->where('id',$data['id'])->find();
             if(!$result){
-                db('owner')->insert($data);
-                return $this->success('添加成功！');
+                $data['time']=time();
+                $data['owner_id']=session('user_id');
+              //  var_dump($data);
+                db('t_order')->insert($data);
+                db('park')->where('id',$data['park_id'])->update(['status'=>'1']);
+                return $this->success('预订成功！');
             }else{
                 db('owner')->update($data);
                 return $this->success('编辑成功！');
             }
         } else {
-            $list = db('owner')->select();
+            $owner=db('owner')->where('owner_id',session('user_id'))->find();
+            $where['village_id']=$owner['owner_village'];
+            $where['status']=0;
+            $list = db('park')->where($where)->select();
             $this->assign('list', $list);
             return view();
         }
@@ -62,10 +68,11 @@ class Order extends Base
      * 取得用户最大Id值
      * @return mixed
      */
-    public function ownerMaxId(){
+    public function orderMaxId(){
         if($this->request->isAjax()){
-            $num = Db::query("select max(owner_id) from owner");
-            return $num[0]['max(owner_id)'];
+
+            $num = Db::query("select max(id) from t_order");
+            return $num[0]['max(id)'];
         }
     }
 
@@ -80,7 +87,7 @@ class Order extends Base
         $data = input('post.');
        // var_dump($data['data']['status']);
         if($data['data']['status']=='1'){
-            return $this->error('预订已完成，请勿重复点击!');
+            return $this->error('取消预订已完成，请勿重复点击!');
         }else{
             db('t_order')->where('id',$data['data']['id'])->update(['status'=>1]);
             db('park')->where('id',$data['data']['park_id'])->update(['status'=>0]);

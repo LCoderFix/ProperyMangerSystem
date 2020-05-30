@@ -20,13 +20,12 @@
     </div>
 </div>
 <script type="text/html" id="bookBar">
-    <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="edit">修改</a>
-    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+    <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="edit">缴费</a>
 </script>
 <!-- 表格状态列 -->
 <script type="text/html" id="tableStatusUser">
-    <input type="checkbox" lay-filter="ckStatusUser" value="{{d.message_id}}" lay-skin="switch"
-           lay-text="已读|未读" {{d.status==1?'checked':''}}/>
+    <input type="checkbox" lay-filter="ckStatusUser" value="{{d.id}}" lay-skin="switch"
+           lay-text="已缴费|未缴费" {{d.status==1?'checked':''}}/>
 </script>
 {include file="comm/footer"}
 <script>
@@ -48,20 +47,20 @@
             cols: [[
                 {type: 'checkbox'}
                 , {type: 'numbers', title: '序号'}
-                , {field: 'message_id', title: 'ID', align: 'center'}
+                , {field: 'id', title: 'ID', align: 'center'}
                 , {field: 'owner_name', title: '业主姓名', align: 'center'}
-                , {field: 'owner_tel', title: '业主电话', align: 'center'}
-                , {field: 'owner_location', title: '业主位置', align: 'center'}
-                , {field: 'content', title: '反馈内容', align: 'center'}
-                ,{align: 'center', field: 'status', sort: true, templet: '#tableStatusUser', title: '反馈情况'}
+                , {field: 'remark', title: '缴费内容', align: 'center'}
+                , {field: 'money', title: '应缴金额', align: 'center'}
+                ,{align: 'center', field: 'status', sort: true, templet: '#tableStatusUser', title: '缴费状态'}
                 ,{
-                    align: 'center', field: 'ctime', sort: true, templet: function (d) {
-                        if (d.ctime != null)
-                            return layui.util.toDateString(d.ctime*1000, 'yyyy-MM-dd HH:mm:ss');
+                    align: 'center', field: 'time', sort: true, templet: function (d) {
+                        if (d.time != null)
+                            return layui.util.toDateString(d.time*1000, 'yyyy-MM-dd HH:mm:ss');
                         else
                             return "";
-                    }, title: '反馈时间'
+                    }, title: '缴费时间'
                 }
+                , {title: '操作', toolbar: '#bookBar', align: 'center',minWidth: 200}
             ]]
         });
 
@@ -69,11 +68,11 @@
         table.on('tool(tableUser)', function (obj) {
             if (obj.event === 'edit') { // 修改
                 //obj.data
-                doEdit(obj.data);
+                doDel(obj.data);
             } else if (obj.event === 'del') { // 删除
-                doDel(obj.data.manger_message_id);
+                doDel(obj.data.id);
             }else if (obj.event === 'reset') { // 重置密码
-                resetPsw(obj.data.owner_id, obj.data.owner_name);
+                resetPsw(obj.data.manger_id, obj.data.manger_name);
             }
         });
         // 删除
@@ -84,7 +83,7 @@
                 return;
             }
             var owner_id = checkRows.data.map(function (d) {
-                return d.owner_id;
+                return d.id;
             });
             doDel(owner_id);
         });
@@ -100,47 +99,36 @@
 
         /* 显示表单弹窗 */
         function doEdit(data) {
-        //    alert(data['manger_village_id']);
-            var data1=data;
-            $.ajax({
-                url: "{:url('announceMaxId')}",
-                type: 'GET',
-                success: function (num) {
-                    $num = num;
-                    if (!data) {
-                        data=new Object();
-                        data['manger_message_id'] = $num + 1;
-                    }
-                    var layIndex = admin.open({
-                        title: (data1 ? '修改' : '添加') + '用户信息',
-                        url: "{:url('announceForm')}",
-                        data: {data: data},     // 传递数据到表单页面
-                        end: function () {
-                            if (admin.getLayerData(layIndex, 'formOk')) {  // 判断表单操作成功标识
-                                insTb.reload();  // 成功刷新表格
-                            }
-                        },
-                        success: function (layero, dIndex) {
-                            // 弹窗超出范围不出现滚动条
-                            $(layero).children('.layui-layer-content').css('overflow', 'visible');
-                        }
-                    });
-                }
-            })
+            //添加id的目的为防止用户编辑时显示用户密码
 
+            var layIndex = admin.open({
+                title: '缴费',
+                url: "{:url('payForm')}" ,
+                data: {data: data},     // 传递数据到表单页面
+                end: function () {
+                    if (admin.getLayerData(layIndex, 'formOk')) {  // 判断表单操作成功标识
+                        insTb.reload();  // 成功刷新表格
+                    }
+                },
+                success: function (layero, dIndex) {
+                    // 弹窗超出范围不出现滚动条
+                    $(layero).children('.layui-layer-content').css('overflow', 'visible');
+                }
+            });
         }
 
 
+
         /* 删除 */
-        function doDel(manger_message_id) {
-            layer.confirm('确定要删除选中数据吗？', {
+        function doDel(data) {
+            layer.confirm('确定要进行缴费吗？', {
                 skin: 'layui-layer-admin',
                 shade: .1
             }, function (index) {
                 layer.close(index);
                 layer.load(2);
-                $.post("{:url('msgDel')}", {
-                    manger_message_id:manger_message_id
+                $.post("{:url('payForm')}", {
+                    data:data
                 }, function (res) {
                     layer.closeAll('loading');
                     if (res.code === 1) {
@@ -155,8 +143,8 @@
         // 修改用户权限
         form.on('switch(ckStatusUser)', function (obj) {
             layer.load(2);
-            $.post('{:url("feedbackStatus")}', {
-                message_id: obj.elem.value,
+            $.post('{:url("userPermission")}', {
+                manger_id: obj.elem.value,
                 status: obj.elem.checked ? 1 : 0
             }, function (res) {
                 layer.closeAll('loading');

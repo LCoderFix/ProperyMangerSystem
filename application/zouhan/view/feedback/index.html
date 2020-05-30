@@ -12,6 +12,7 @@
                         <button class="layui-btn icon-btn layui-btn-sm" lay-filter="searchUser" lay-submit>
                             <i class="layui-icon">&#xe615;</i>搜索
                         </button>
+                        <button id="addUser" class="layui-btn icon-btn layui-btn-sm"><i class="layui-icon layui-icon-add-1"></i>添加</button>
                     </div>
                 </div>
             </div>
@@ -51,7 +52,7 @@
                 , {field: 'message_id', title: 'ID', align: 'center'}
                 , {field: 'owner_name', title: '业主姓名', align: 'center'}
                 , {field: 'owner_tel', title: '业主电话', align: 'center'}
-                , {field: 'owner_location', title: '业主位置', align: 'center'}
+                , {field: 'owner_location', title: '业主电话', align: 'center'}
                 , {field: 'content', title: '反馈内容', align: 'center'}
                 ,{align: 'center', field: 'status', sort: true, templet: '#tableStatusUser', title: '反馈情况'}
                 ,{
@@ -62,6 +63,7 @@
                             return "";
                     }, title: '反馈时间'
                 }
+                , {title: '操作', toolbar: '#bookBar', align: 'center',minWidth: 200}
             ]]
         });
 
@@ -71,7 +73,7 @@
                 //obj.data
                 doEdit(obj.data);
             } else if (obj.event === 'del') { // 删除
-                doDel(obj.data.manger_message_id);
+                doDel(obj.data.message_id);
             }else if (obj.event === 'reset') { // 重置密码
                 resetPsw(obj.data.owner_id, obj.data.owner_name);
             }
@@ -103,17 +105,17 @@
         //    alert(data['manger_village_id']);
             var data1=data;
             $.ajax({
-                url: "{:url('announceMaxId')}",
+                url: "{:url('feedbackMaxId')}",
                 type: 'GET',
                 success: function (num) {
                     $num = num;
                     if (!data) {
                         data=new Object();
-                        data['manger_message_id'] = $num + 1;
+                        data['message_id'] = $num + 1;
                     }
                     var layIndex = admin.open({
-                        title: (data1 ? '修改' : '添加') + '用户信息',
-                        url: "{:url('announceForm')}",
+                        title:  '反馈信息',
+                        url: "{:url('feedbackForm')}",
                         data: {data: data},     // 传递数据到表单页面
                         end: function () {
                             if (admin.getLayerData(layIndex, 'formOk')) {  // 判断表单操作成功标识
@@ -132,7 +134,7 @@
 
 
         /* 删除 */
-        function doDel(manger_message_id) {
+        function doDel(message_id) {
             layer.confirm('确定要删除选中数据吗？', {
                 skin: 'layui-layer-admin',
                 shade: .1
@@ -140,7 +142,7 @@
                 layer.close(index);
                 layer.load(2);
                 $.post("{:url('msgDel')}", {
-                    manger_message_id:manger_message_id
+                    message_id:message_id
                 }, function (res) {
                     layer.closeAll('loading');
                     if (res.code === 1) {

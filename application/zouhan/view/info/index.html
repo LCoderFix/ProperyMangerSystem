@@ -5,14 +5,6 @@
         <div class="layui-card-body table-tool-mini full-table">
             <div class="layui-form toolbar">
                 <div class="layui-form-item">
-                    <div class="layui-inline">
-                        <input class="layui-input" name="key" placeholder="请输入关键字" autocomplete="off">
-                    </div>
-                    <div class="layui-inline" style="padding-right: 110px;">
-                        <button class="layui-btn icon-btn layui-btn-sm" lay-filter="searchUser" lay-submit>
-                            <i class="layui-icon">&#xe615;</i>搜索
-                        </button>
-                    </div>
                 </div>
             </div>
             <table id="tableUser" lay-filter="tableUser"></table>
@@ -20,13 +12,12 @@
     </div>
 </div>
 <script type="text/html" id="bookBar">
-    <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="edit">修改</a>
-    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="edit">充值</a>
 </script>
 <!-- 表格状态列 -->
 <script type="text/html" id="tableStatusUser">
-    <input type="checkbox" lay-filter="ckStatusUser" value="{{d.message_id}}" lay-skin="switch"
-           lay-text="已读|未读" {{d.status==1?'checked':''}}/>
+    <input type="checkbox" lay-filter="ckStatusUser" value="{{d.owner_id}}" lay-skin="switch"
+           lay-text="已认证|未认证" {{d.owner_certification==1?'checked':''}}/>
 </script>
 {include file="comm/footer"}
 <script>
@@ -48,20 +39,12 @@
             cols: [[
                 {type: 'checkbox'}
                 , {type: 'numbers', title: '序号'}
-                , {field: 'message_id', title: 'ID', align: 'center'}
+                , {field: 'owner_id', title: '业主ID', align: 'center'}
                 , {field: 'owner_name', title: '业主姓名', align: 'center'}
                 , {field: 'owner_tel', title: '业主电话', align: 'center'}
-                , {field: 'owner_location', title: '业主位置', align: 'center'}
-                , {field: 'content', title: '反馈内容', align: 'center'}
-                ,{align: 'center', field: 'status', sort: true, templet: '#tableStatusUser', title: '反馈情况'}
-                ,{
-                    align: 'center', field: 'ctime', sort: true, templet: function (d) {
-                        if (d.ctime != null)
-                            return layui.util.toDateString(d.ctime*1000, 'yyyy-MM-dd HH:mm:ss');
-                        else
-                            return "";
-                    }, title: '反馈时间'
-                }
+                , {field: 'owner_balance', title: '物业费余额', align: 'center'}
+             //   ,{align: 'center', field: 'status', sort: true, templet: '#tableStatusUser', title: '认证情况'}
+                , {title: '操作', toolbar: '#bookBar', align: 'center',minWidth: 200}
             ]]
         });
 
@@ -71,9 +54,9 @@
                 //obj.data
                 doEdit(obj.data);
             } else if (obj.event === 'del') { // 删除
-                doDel(obj.data.manger_message_id);
+                doDel(obj.data.owner_id);
             }else if (obj.event === 'reset') { // 重置密码
-                resetPsw(obj.data.owner_id, obj.data.owner_name);
+                resetPsw(obj.data.manger_id, obj.data.manger_name);
             }
         });
         // 删除
@@ -100,47 +83,34 @@
 
         /* 显示表单弹窗 */
         function doEdit(data) {
-        //    alert(data['manger_village_id']);
-            var data1=data;
-            $.ajax({
-                url: "{:url('announceMaxId')}",
-                type: 'GET',
-                success: function (num) {
-                    $num = num;
-                    if (!data) {
-                        data=new Object();
-                        data['manger_message_id'] = $num + 1;
+            //添加id的目的为防止用户编辑时显示用户密码
+            data['owner_balance']='';
+            var layIndex = admin.open({
+                title: '余额充值',
+                url: "{:url('infoForm')}" ,
+                data: {data: data},     // 传递数据到表单页面
+                end: function () {
+                    if (admin.getLayerData(layIndex, 'formOk')) {  // 判断表单操作成功标识
+                        insTb.reload();  // 成功刷新表格
                     }
-                    var layIndex = admin.open({
-                        title: (data1 ? '修改' : '添加') + '用户信息',
-                        url: "{:url('announceForm')}",
-                        data: {data: data},     // 传递数据到表单页面
-                        end: function () {
-                            if (admin.getLayerData(layIndex, 'formOk')) {  // 判断表单操作成功标识
-                                insTb.reload();  // 成功刷新表格
-                            }
-                        },
-                        success: function (layero, dIndex) {
-                            // 弹窗超出范围不出现滚动条
-                            $(layero).children('.layui-layer-content').css('overflow', 'visible');
-                        }
-                    });
+                },
+                success: function (layero, dIndex) {
+                    // 弹窗超出范围不出现滚动条
+                    $(layero).children('.layui-layer-content').css('overflow', 'visible');
                 }
-            })
-
+            });
         }
 
-
         /* 删除 */
-        function doDel(manger_message_id) {
+        function doDel(owner_id) {
             layer.confirm('确定要删除选中数据吗？', {
                 skin: 'layui-layer-admin',
                 shade: .1
             }, function (index) {
                 layer.close(index);
                 layer.load(2);
-                $.post("{:url('msgDel')}", {
-                    manger_message_id:manger_message_id
+                $.post("{:url('ownerDel')}", {
+                    owner_id:owner_id
                 }, function (res) {
                     layer.closeAll('loading');
                     if (res.code === 1) {
@@ -155,8 +125,8 @@
         // 修改用户权限
         form.on('switch(ckStatusUser)', function (obj) {
             layer.load(2);
-            $.post('{:url("feedbackStatus")}', {
-                message_id: obj.elem.value,
+            $.post('{:url("userPermission")}', {
+                manger_id: obj.elem.value,
                 status: obj.elem.checked ? 1 : 0
             }, function (res) {
                 layer.closeAll('loading');

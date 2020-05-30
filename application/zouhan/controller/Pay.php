@@ -1,13 +1,12 @@
 <?php
 
 
-namespace app\wdq\controller;
+namespace app\zouhan\controller;
 
 
-use app\wdq\controller\Base;
+use app\zouhan\controller\Base;
 use think\Db;
-
-class Order extends Base
+class Pay extends Base
 {
     public function index(){
         if (request()->isAjax()) {
@@ -16,18 +15,15 @@ class Order extends Base
             $limit = $get['limit'] ?? 10;
             $id=session('user_id');
             if ($key) {
-                $where['owner_name']=['like','%' . $key . '%'];
+                $where['remark|o.owner_name']=['like','%' . $key . '%'];
             }
-            $manger_village=db('manger_village')->where('manger_id',$id)->find();
-            $where['owner_village']=$manger_village['village_id'];
-           // $where['order.status']=0;
+
+            $where['o.owner_id']=$id;
             //select book_name,type_name from book left join book_type on book.type_id=book_type.type_id
-            $list = db('t_order')
-                ->join('owner o','o.owner_id=t_order.owner_id')
-                ->join('park p','p.id=t_order.park_id')
-                ->field('t_order.*,p.location,o.owner_name,o.owner_village')
+            $list = db('pay p')
+                ->join('owner o','o.owner_id=p.owner_id')
                 ->where($where)
-                ->order('t_order.id')
+                ->order('p.id')
                 ->paginate($limit)  //分页
                 ->toArray(); //转换为数组
             return $this->showList($list);
@@ -38,23 +34,33 @@ class Order extends Base
     /**
      * 用户新增、编辑页面
      */
-    public function ownerForm()
+    public function payForm()
     {
         if (request()->isPost()) {
             $data = input('post.');
-            //  var_dump($data);
-            $result=db("owner")->where('owner_id',$data['owner_id'])->find();
+           // var_dump($data);
+            $result=db("pay")->where('id',$data["data"]['id'])->find();
             if(!$result){
-                db('owner')->insert($data);
+                db('pay')->insert($data);
                 return $this->success('添加成功！');
             }else{
-                db('owner')->update($data);
-                return $this->success('编辑成功！');
+                if($data["data"]['status']==1){
+                    return $this->error('已缴费，请勿重复操作');
+                }else{
+                    $owner=db('owner')->where('owner_id',$data["data"]['owner_id'])->find();
+                    db('pay')->where('id',$data["data"]['id'])->update(['status'=>'1','time'=>time()]);
+                    db('owner')->where('owner_id',$data["data"]['owner_id'])->update(['owner_balance'=>$owner['owner_balance']-$data["data"]['money']]);
+                    return $this->success('编辑成功！');
+                }
+
             }
         } else {
-            $list = db('owner')->select();
+            $this->assign('new', input('param.id'));
+            $id=session('user_id');
+            $manger_village=db('manger_village')->where('manger_id',$id)->find();
+            $list = db('owner')->where('owner_village',$manger_village['village_id'])->select();
             $this->assign('list', $list);
-            return view();
+            return view('pay_form');
         }
     }
 
@@ -62,10 +68,10 @@ class Order extends Base
      * 取得用户最大Id值
      * @return mixed
      */
-    public function ownerMaxId(){
+    public function MaxId(){
         if($this->request->isAjax()){
-            $num = Db::query("select max(owner_id) from owner");
-            return $num[0]['max(owner_id)'];
+            $num = Db::query("select max(id) from pay");
+            return $num[0]['max(id)'];
         }
     }
 
@@ -74,20 +80,11 @@ class Order extends Base
      * @throws \think\Exception
      * @throws \think\exception\PDOException
      */
-    public function orderDel()
+    public function payDel()
     {
         //参数后加/a是因为前面批量删除时会传来数组，如[1,2]
-        $data = input('post.');
-       // var_dump($data['data']['status']);
-        if($data['data']['status']=='1'){
-            return $this->error('预订已完成，请勿重复点击!');
-        }else{
-            db('t_order')->where('id',$data['data']['id'])->update(['status'=>1]);
-            db('park')->where('id',$data['data']['park_id'])->update(['status'=>0]);
-            return $this->success('订单已完成!');
-        }
-
-
+        db('pay')->delete(input('post.id/a'));
+        return $this->success('删除成功!');
     }
     /**
      * 重置密码
@@ -110,5 +107,6 @@ class Order extends Base
             return $this->error('设置失败!');
         }
     }
+
 
 }

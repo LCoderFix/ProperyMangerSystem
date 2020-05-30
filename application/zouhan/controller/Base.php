@@ -4,7 +4,7 @@
  * 控制器基类
  */
 
-namespace app\admin\controller;
+namespace app\zouhan\controller;
 
 use think\Controller;
 
@@ -18,24 +18,26 @@ class Base extends Controller
         if (!session('user_id')) {
             $this->redirect('admin/login/index');
         }
-        define('MODULE_NAME', strtolower(request()->module()));
-        define('CONTROLLER_NAME', strtolower(request()->controller()));
-        define('ACTION_NAME', strtolower(request()->action()));
-       // var_dump(strtolower(request()->module()).strtolower(request()->controller().strtolower(request()->action())));
+        define('MODULE_NAME', 'admin');
+        define('CONTROLLER_NAME', 'index');
+        define('ACTION_NAME', 'menu');
+       // var_dump(MODULE_NAME.CONTROLLER_NAME.ACTION_NAME);
         //权限管理
         //当前操作权限ID
         //if (session('user_id') != 1) {
             $info = db('sys_menu')->where('url', '/'.MODULE_NAME . '/' . CONTROLLER_NAME . '/' . ACTION_NAME)->find();
             $this->menuId = $info['menu_id'];
             //当前用户权限
-            if (!cache('role_menu_' . session('role_id'))) {
+            if (!cache('role_menu_' . '16')) {
+             //   var_dump('1111');
+
                 $menus = db('sys_role')
-                    ->where('role_id', session('role_id'))
+                    ->where('role_id', '16')
                     ->value('menus');
 
-                cache('role_menu_' . session('role_id'), $menus);
+                cache('role_menu_' . '16', $menus);
             }
-            $menus = cache('role_menu_' . session('role_id'));
+            $menus = cache('role_menu_' . '16');
             $this->userMenus = explode(',', $menus);
 
             /*if ($this->menuId) {
