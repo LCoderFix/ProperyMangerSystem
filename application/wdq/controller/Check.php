@@ -98,6 +98,9 @@ class Check extends Base
         $status = input('post.status');
         // var_dump($status.input('post.manger_id'));
         if (db('owner')->where('owner_id', input('post.owner_id'))->update(['owner_certification' => $status,'ctime'=>time()]) !== false) {
+            $manger=db('manger_village')->where('manger_id',session('user_id'))->find();
+            $village=db('village')->where('village_id',$manger['village_id'])->find();
+            db('village')->where('village_id',$village['village_id'])->update(['village_households_num'=>$village['village_households_num']+1]);
             return $this->success('设置成功!');
         } else {
             return $this->error('设置失败!');

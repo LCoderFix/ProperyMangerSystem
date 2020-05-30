@@ -1,10 +1,10 @@
 <?php
 
 
-namespace app\zouhan\controller;
+namespace app\tourist\controller;
 
 
-use app\wdq\controller\Base;
+use app\tourist\controller\Base;
 use think\Db;
 
 class Order extends Base

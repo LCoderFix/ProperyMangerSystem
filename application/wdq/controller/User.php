@@ -40,8 +40,11 @@ class User extends Base
         if (request()->isPost()) {
             $data = input('post.');
           //  var_dump($data);
+            $manger=db('manger_village')->where('manger_id',session('user_id'))->find();
             $result=db("owner")->where('owner_id',$data['owner_id'])->find();
             if(!$result){
+                $data['owner_village']=$manger['village_id'];
+                $data['owner_password']=md5('1');
                 db('owner')->insert($data);
                 return $this->success('添加成功！');
             }else{
@@ -74,7 +77,11 @@ class User extends Base
     public function ownerDel()
     {
         //参数后加/a是因为前面批量删除时会传来数组，如[1,2]
+      //  var_dump(count(input('post.owner_id/a')));
         db('owner')->delete(input('post.owner_id/a'));
+        $manger=db('manger_village')->where('manger_id',session('user_id'))->find();
+        $village=db('village')->where('village_id',$manger['village_id'])->find();
+        db('village')->where('village_id',$village['village_id'])->update(['village_households_num'=>$village['village_households_num']-count(input('post.owner_id/a'))]);
         return $this->success('删除成功!');
     }
     /**

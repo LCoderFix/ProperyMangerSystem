@@ -1,0 +1,119 @@
+{include file="comm/header"}
+<style>
+    #userFace {
+        width: 200px;
+        height: 200px;
+        margin-top: 20px;
+        cursor: pointer;
+        box-shadow: 0 0 50px #44576b;
+    }
+    .user_right{text-align: center;}
+</style>
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <form class="layui-form layui-row" lay-filter="form">
+                    <input name="user_id" type="hidden"/>
+                    <div class="layui-card-body" pad15>
+                        <div class="layui-col-md3 layui-col-xs12 user_right">
+                            <div class="layui-upload-list">
+                                <input type="hidden" name="avatar" id="avatar">
+                                <img class="layui-upload-img layui-circle" src="{$src}" id="userFace">
+                            </div>
+                            <button type="button" id="imgBtn" class="layui-btn layui-btn-primary"><i class="layui-icon">&#xe67c;</i>
+                                换个头像
+                            </button>
+                        </div>
+                        <div class="layui-col-md4 layui-col-xs12">
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">用户名</label>
+                                <div class="layui-input-block">
+                                    <input type="text" name="username" disabled class="layui-input layui-disabled">
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <label class="layui-form-label layui-form-required">真实姓名</label>
+                                <div class="layui-input-block">
+                                    <input type="text" name="realname" placeholder="请输入真实姓名" lay-verify="required"
+                                           class="layui-input">
+                                </div>
+                            </div>
+                            <div class="layui-form-item" pane="">
+                                <label class="layui-form-label">性别</label>
+                                <div class="layui-input-block userSex">
+                                    <input type="radio" name="gender" value="男" title="男">
+                                    <input type="radio" name="gender" value="女" title="女">
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">手机号码</label>
+                                <div class="layui-input-block">
+                                    <input type="text" name="phone" placeholder="请输入手机号码" class="layui-input">
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <label class="layui-form-label layui-form-required">邮箱</label>
+                                <div class="layui-input-block">
+                                    <input type="text" name="email" placeholder="请输入邮箱" lay-verify="required"
+                                           class="layui-input">
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <div class="layui-input-block">
+                                    <button class="layui-btn" lay-filter="save" lay-submit>更新信息
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{include file="comm/footer"}
+<script>
+    layui.use(['layer', 'form', 'admin','upload'], function () {
+        var $ = layui.jquery;
+        var layer = layui.layer;
+        var form = layui.form;
+        var admin = layui.admin;
+        var upload = layui.upload;
+
+        var uploadInst = upload.render({
+            elem: '#imgBtn'
+            ,url: '{:url("admin/UpFiles/upImg")}'
+            ,before: function(obj){
+                obj.preview(function(index, file, result){
+                    $('#userFace').attr('src', result);
+                });
+            },
+            done: function(res){
+                if(res.code>0){
+                    $('#avatar').val(res.url);
+                }else{
+                    return layer.msg('上传失败');
+                }
+            }
+        });
+
+
+
+        form.val('form', {$data});
+        /* 监听表单提交 */
+        form.on('submit(save)', function (data) {
+            layer.load(2);
+            $.post("{:url('userInfo')}", data.field, function (res) {
+                layer.closeAll('loading');
+                if (res.code === 1) {
+                    layer.msg(res.msg, {icon: 1});
+                } else {
+                    layer.msg(res.msg, {icon: 2});
+                }
+            }, 'json');
+            return false;
+        });
+
+    });
+</script>

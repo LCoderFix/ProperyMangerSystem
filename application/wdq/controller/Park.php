@@ -44,6 +44,9 @@ class Park extends Base
                 $village=db('manger_village')->where('manger_id',session('user_id'))->find();
                 $data['village_id']=$village['village_id'];
                 db('park')->insert($data);
+                $manger=db('manger_village')->where('manger_id',session('user_id'))->find();
+                $village=db('village')->where('village_id',$manger['village_id'])->find();
+                db('village')->where('village_id',$village['village_id'])->update(['village_parking_num'=>$village['village_parking_num']+1]);
                 return $this->success('添加成功！');
             }else{
                 db('park')->update($data);
@@ -76,6 +79,9 @@ class Park extends Base
     {
         //参数后加/a是因为前面批量删除时会传来数组，如[1,2]
         db('park')->delete(input('post.id/a'));
+        $manger=db('manger_village')->where('manger_id',session('user_id'))->find();
+        $village=db('village')->where('village_id',$manger['village_id'])->find();
+        db('village')->where('village_id',$village['village_id'])->update(['village_parking_num'=>$village['village_parking_num']-count(input('post.id/a'))]);
         return $this->success('删除成功!');
     }
     /**

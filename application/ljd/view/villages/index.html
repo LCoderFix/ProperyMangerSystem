@@ -92,7 +92,11 @@
 
         }
 
-
+        // 添加按钮点击事件
+        $('#addVillage').click(function () {
+            // $data=[];
+            doEdit();
+        });
         /* 删除 */
         function doDel(village_id, name) {
             layer.confirm('确定要删除“' + name + '”吗？', {

@@ -50,8 +50,13 @@ class Login extends Controller
                 if ($owner['owner_password'] == md5($data['password'])) {
                     session('username', $owner['owner_name']);
                     session('user_id', $owner['owner_id']);
-                    session('role_id', '16');
-                    return $this->success('登录成功!', url('zouhan/index/index'));
+                    if($owner['owner_certification']==1){
+                        return $this->success('登录成功!', url('zouhan/index/index'));
+                    }else{
+
+                        return $this->success('登录成功!', url('tourist/index/index'));
+                    }
+
                 } else {
                     return $this->error('用户名或者密码错误，重新输入!'); //密码错误
                 }

@@ -32,7 +32,7 @@ class Pay extends Base
         }
     }
     /**
-     * 用户新增、编辑页面
+     * 用户新增、编辑页面  游客
      */
     public function payForm()
     {

@@ -18,8 +18,9 @@ class Villages extends Base
             $limit = $get['limit'] ?? 10;
             //select book_name,type_name from book left join book_type on book.type_id=book_type.type_id
             $list = db('village v')
-                ->join('manger_village m', 'v.village_id=m.village_id')
-                ->join('property_manger p','p.manger_id=m.manger_id')
+                ->join('manger_village m', 'v.village_id=m.village_id','left')
+                ->join('property_manger p','p.manger_id=m.manger_id','left')
+                ->field('v.*,p.manger_name,p.manger_id')
                 ->order('v.village_id')
                 ->paginate($limit)  //分页
                 ->toArray(); //转换为数组
@@ -38,22 +39,25 @@ class Villages extends Base
             $data = input('post.');
             $result=db("village")->where('village_id',$data['village_id'])->find();
             if(!$result){
-                $mangerVillage['manger_id']=substr($data['manger_id'],0,1);
-                $mangerVillage['village_id']=$data['village_id'];
-                unset($data['manger_id']);
-                db('manger_village')->insert($mangerVillage);
+              //  $mangerVillage['manger_id']=$data['manger_id'];
+              //  $mangerVillage['village_id']=$data['village_id'];
+              //  $exist=db('manger_village')->where('manger_id',date(['manger_id']));
+
+              //  db('manger_village')->insert($mangerVillage);
                 db('village')->insert($data);
                 return $this->success('添加成功！');
             }else{
-                $mangerVillage['manger_id']=substr($data['manger_id'],0,1);
-                $mangerVillage['village_id']=$data['village_id'];
-                unset($data['manger_id']);
-                db('manger_village')->update($mangerVillage);
                 db('village')->update($data);
                 return $this->success('编辑成功！');
             }
         } else {
             $list = db('property_manger')->select();
+            /*for ($i=0;$i<count($list);$i++){
+                $exist=db('manger_village')->where('manger_id',$list[$i]['manger_id'])->find();
+                if($exist){
+                    unset($list[$i]);
+                }
+            }*/
             $this->assign('list', $list);
             return view();
         }

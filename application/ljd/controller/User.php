@@ -53,6 +53,7 @@ class User extends Base
                 db('property_manger')->insert($data);
                 return $this->success('添加成功！');
             }else{
+              //  var_dump($data);
                 $mangerVillage['manger_village_id']=$data['manger_village_id'];
                 $mangerVillage['manger_id']=$data['manger_id'];
                 $mangerVillage['village_id']=$data['village_id'];
@@ -62,7 +63,6 @@ class User extends Base
                // var_dump();
                 $exist=db('manger_village')->where('manger_village_id',$mangerVillage['manger_village_id'])->find();
                 if(!$exist){
-                    unset($mangerVillage['manger_village_id']);
                     db('manger_village')->insert($mangerVillage);
                 }else{
                     $sql='update manger_village set village_id='.$mangerVillage['village_id']. ' where manger_village_id='.$mangerVillage['manger_village_id'];
