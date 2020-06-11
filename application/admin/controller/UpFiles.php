@@ -22,7 +22,7 @@ class UpFiles extends Base
             db('sys_user')->where('user_id',session('user_id'))->update(['avatar'=>$result['url']]);
             return $result;
         } else {
-            // 上传失败获取错误信息
+            // 上传失败获取错误信息  车库
             $result['code'] = 0;
             $result['info'] = $file->getError();
             $result['url'] = '';

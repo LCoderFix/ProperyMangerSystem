@@ -49,9 +49,8 @@
                 {type: 'checkbox'}
                 , {type: 'numbers', title: '序号'}
                 , {field: 'id', title: '预订ID', align: 'center'}
-                , {field: 'owner_name', title: '业主姓名', align: 'center'}
                 , {field: 'park_id', title: '车位ID', align: 'center'}
-                , {field: 'location', title: '车位位置', align: 'center'}
+                , {field: 'name', title: '车库名称', align: 'center'}
                 ,{align: 'center', field: 'status', sort: true, templet: '#tableStatusUser', title: '预订/完成情况'}
                 ,{
                     align: 'center', field: 'time', sort: true, templet: function (d) {
@@ -59,7 +58,15 @@
                             return layui.util.toDateString(d.time*1000, 'yyyy-MM-dd HH:mm:ss');
                         else
                             return "";
-                    }, title: '预定/完成时间'
+                    }, title: '预定时间'
+                }
+                ,{
+                    align: 'center', field: 'endtime', sort: true, templet: function (d) {
+                        if (d.endtime != null)
+                            return layui.util.toDateString(d.endtime*1000, 'yyyy-MM-dd HH:mm:ss');
+                        else
+                            return "";
+                    }, title: '完成时间'
                 }
                 , {title: '操作', toolbar: '#bookBar', align: 'center',minWidth: 200}
             ]]
@@ -101,16 +108,15 @@
         /* 显示表单弹窗 */
         function doEdit(data) {
         //    alert(data['manger_village_id']);
-            var data1=data;
             $.ajax({
                 url: "{:url('orderMaxId')}",
                 type: 'GET',
                 success: function (num) {
                     $num = num;
-                  //  alert($num);
+                    //  alert($num);
                     if (!data) {
                         data=new Object();
-                        data['id'] = $num + 1;
+                        data['order_id'] = $num + 1;
                     }
 
                     var layIndex = admin.open({
@@ -129,7 +135,6 @@
                     });
                 }
             })
-
         }
 
 

@@ -50,7 +50,7 @@
                 , {field: 'id', title: '预订ID', align: 'center'}
                 , {field: 'owner_name', title: '业主姓名', align: 'center'}
                 , {field: 'park_id', title: '车位ID', align: 'center'}
-                , {field: 'location', title: '车位位置', align: 'center'}
+                , {field: 'name', title: '车库名称', align: 'center'}
                 ,{align: 'center', field: 'status', sort: true, templet: '#tableStatusUser', title: '预订/完成情况'}
                 ,{
                     align: 'center', field: 'time', sort: true, templet: function (d) {
@@ -59,6 +59,14 @@
                         else
                             return "";
                     }, title: '预定时间'
+                }
+                ,{
+                    align: 'center', field: 'endtime', sort: true, templet: function (d) {
+                        if (d.endtime != null)
+                            return layui.util.toDateString(d.end_time*1000, 'yyyy-MM-dd HH:mm:ss');
+                        else
+                            return "";
+                    }, title: '结束时间'
                 }
                 , {title: '操作', toolbar: '#bookBar', align: 'center',minWidth: 200}
             ]]

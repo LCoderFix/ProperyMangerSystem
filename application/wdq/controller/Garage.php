@@ -4,31 +4,25 @@
 namespace app\wdq\controller;
 
 
-use app\wdq\controller\Base;
-use think\Db;
-
-class Park extends Base
+class Garage extends Base
 {
     public function index(){
         if (request()->isAjax()) {
             $get = $this->request->get();
             $key = $get['key'] ?? '';
             $limit = $get['limit'] ?? 10;
-            $id=session('user_id');
             if ($key) {
-                $where['g.name']=['like','%' . $key . '%'];
+                $where['name']=['like','%' . $key . '%'];
             }
+            $id=session('user_id');
             $manger_village=db('manger_village')->where('manger_id',$id)->find();
-            $where['g.village_id']=$manger_village['village_id'];
+            $where['village_id']=$manger_village['village_id'];
             //select book_name,type_name from book left join book_type on book.type_id=book_type.type_id
-            $list = db('park p')
-                ->join('garage g','g.id=p.garage_id','left')
+            $list = db('garage')
                 ->where($where)
-                ->field('p.*,g.name')
-                ->order('p.id')
+                ->order('id')
                 ->paginate($limit)  //分页
                 ->toArray(); //转换为数组
-           // var_dump($list);
             return $this->showList($list);
         } else {
             return view();
@@ -37,27 +31,27 @@ class Park extends Base
     /**
      * 用户新增、编辑页面
      */
-    public function parkForm()
+    public function garageForm()
     {
         if (request()->isPost()) {
             $data = input('post.');
-            $result=db("park")->where('id',$data['id'])->find();
+            //  var_dump($data);
+            $result=db("garage")->where('id',$data['id'])->find();
             if(!$result){
                 $village=db('manger_village')->where('manger_id',session('user_id'))->find();
                 $data['village_id']=$village['village_id'];
-                db('park')->insert($data);
-                $garage=db('garage')->where('id',$data['garage_id'])->find();
-                db('garage')->where('id',$data['garage_id'])->update(['count'=>$garage['count']+1]);
+                db('garage')->insert($data);
                 return $this->success('添加成功！');
             }else{
-                db('park')->update($data);
+                db('garage')->update($data);
                 return $this->success('编辑成功！');
             }
         } else {
             $id=session('user_id');
             $manger_village=db('manger_village')->where('manger_id',$id)->find();
-            $where['village_id']=$manger_village['village_id'];
+            $where['id']=$manger_village['village_id'];
             $list = db('garage')->where($where)->select();
+
             $this->assign('list', $list);
             return view();
         }
@@ -69,8 +63,8 @@ class Park extends Base
      */
     public function ownerMaxId(){
         if($this->request->isAjax()){
-            $num = Db::query("select max(owner_id) from owner");
-            return $num[0]['max(owner_id)'];
+            $num = Db::query("select max(id) from garage");
+            return $num[0]['max(id)'];
         }
     }
 
@@ -79,13 +73,14 @@ class Park extends Base
      * @throws \think\Exception
      * @throws \think\exception\PDOException
      */
-    public function parkDel()
+    public function garageDel()
     {
         //参数后加/a是因为前面批量删除时会传来数组，如[1,2]
-        db('park')->delete(input('post.id/a'));
+        $garage=db('garage')->where('id','post.id')->find();
+        db('garage')->delete(input('post.id/a'));
         $manger=db('manger_village')->where('manger_id',session('user_id'))->find();
         $village=db('village')->where('village_id',$manger['village_id'])->find();
-        db('village')->where('village_id',$village['village_id'])->update(['village_parking_num'=>$village['village_parking_num']-count(input('post.id/a'))]);
+        db('village')->where('village_id',$village['village_id'])->update(['village_parking_num'=>$village['village_parking_num']-$garage['count']]);
         return $this->success('删除成功!');
     }
     /**
@@ -109,5 +104,4 @@ class Park extends Base
             return $this->error('设置失败!');
         }
     }
-
 }

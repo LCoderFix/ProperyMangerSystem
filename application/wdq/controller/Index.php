@@ -44,6 +44,7 @@ class Index extends Base
                 }
             }
         }
+        var_dump($menus);
 
         return json($menus);
     }

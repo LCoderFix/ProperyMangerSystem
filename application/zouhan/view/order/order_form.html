@@ -3,7 +3,7 @@
     <div class="layui-form-item">
         <label class="layui-form-label layui-form-required">ID</label>
         <div class="layui-input-block">
-            <input name="id" placeholder="请输入ID" type="text" class="layui-input"
+            <input name="order_id" placeholder="请输入ID" type="text" class="layui-input"
                    lay-verType="tips" lay-verify="required" required/>
         </div>
 
@@ -11,17 +11,24 @@
 
     </div>
     <div class="layui-form-item">
-        <label class="layui-form-label layui-form-required">业主</label>
+        <label class="layui-form-label layui-form-required" >车库</label>
         <div class="layui-input-block">
-            <select name="park_id" lay-search >
-                <option value="">请选择车位</option>
+            <select name="garage_id" lay-search id="garage" lay-filter="garageSelect">
+                <option value="">请选择车库</option>
                 {volist name="list" id="vo"}
-                <option value="{$vo.id}">{$vo.id.$vo.location}</option>
+                <option value="{$vo.id}">{$vo.name}</option>
                 {/volist}
             </select>
         </div>
     </div>
-
+    <div class="layui-form-item">
+        <label class="layui-form-label layui-form-required" >车位</label>
+        <div class="layui-input-block">
+            <select name="id" lay-search id="park" lay-filter="parkSelect">
+                <option value="">请选择车位</option>
+            </select>
+        </div>
+    </div>
 
     <div class="layui-form-item text-right">
         <button class="layui-btn layui-btn-primary" type="button" ew-event="closePageDialog">取消</button>
@@ -39,7 +46,42 @@
         // 回显数据
         var data = admin.getLayerData('#form').data;
         form.val('form', data);
-
+        form.on('select(garageSelect)',function () {
+            var garageId = $("#garage option:selected").val();
+            $.ajax({
+                type:'POST',
+                url:'idForm',
+                data:{garage_id:garageId},
+                success:function (data) {
+                    $("#park").empty();
+                    $("#park").html("<option value=''>请选择车位</option>");
+                    $.each(data,function(index,item){
+                        console.log(item.id);
+                        $('#park').append(new Option(item.id));//往下拉菜单里添加元素
+                        form.render('select'); //这个很重要
+                    })
+                },
+                error:function () {
+                    alert(error);
+                }
+            })
+            form.render('parkSelect');
+        });
+        /*form.on('select(parkSelect)', function(data){
+            //var provinceId = $("#province option:selected").val();
+             var garageId = $("#garage option:selected").val();
+             data.garage_id=garageId;
+            //初始化城市列表
+            $.ajax({
+                type:'POST',
+                url:'idForm',
+                data:data,
+                async:true,
+                success:function (data) {
+                    form.render('select');
+                }
+            })
+        });*/
         // 表单提交事件
         form.on('submit(save)', function (data) {
             layer.load(2);

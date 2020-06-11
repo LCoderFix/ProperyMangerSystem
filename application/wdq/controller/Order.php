@@ -25,7 +25,8 @@ class Order extends Base
             $list = db('t_order')
                 ->join('owner o','o.owner_id=t_order.owner_id')
                 ->join('park p','p.id=t_order.park_id')
-                ->field('t_order.*,p.location,o.owner_name,o.owner_village')
+                ->join('garage g','g.id=p.garage_id')
+                ->field('t_order.*,o.owner_name,o.owner_village,g.name')
                 ->where($where)
                 ->order('t_order.id')
                 ->paginate($limit)  //分页
@@ -82,7 +83,7 @@ class Order extends Base
         if($data['data']['status']=='1'){
             return $this->error('预订已完成，请勿重复点击!');
         }else{
-            db('t_order')->where('id',$data['data']['id'])->update(['status'=>1]);
+            db('t_order')->where('id',$data['data']['id'])->update(['status'=>1,'endtime'=>time()]);
             db('park')->where('id',$data['data']['park_id'])->update(['status'=>0]);
             return $this->success('订单已完成!');
         }

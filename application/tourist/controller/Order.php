@@ -24,7 +24,8 @@ class Order extends Base
             $list = db('t_order')
                 ->join('owner o','o.owner_id=t_order.owner_id')
                 ->join('park p','p.id=t_order.park_id')
-                ->field('t_order.*,p.location,o.owner_name,o.owner_village')
+                ->join('garage g','g.id=p.garage_id')
+                ->field('t_order.*,o.owner_name,o.owner_village,g.name')
                 ->where($where)
                 ->order('t_order.id')
                 ->paginate($limit)  //分页
@@ -41,14 +42,17 @@ class Order extends Base
     {
         if (request()->isPost()) {
             $data = input('post.');
-            //  var_dump($data);
-            $result=db("t_order")->where('id',$data['id'])->find();
+            $result=db("t_order")->where('id',$data['order_id'])->find();
             if(!$result){
+                db('park')->where('id',$data['id'])->update(['status'=>'1']);
                 $data['time']=time();
                 $data['owner_id']=session('user_id');
               //  var_dump($data);
+                $data['park_id']=$data['id'];
+                $data['id']=$data['order_id'];
+                unset($data['garage_id']);
+                unset($data['order_id']);
                 db('t_order')->insert($data);
-                db('park')->where('id',$data['park_id'])->update(['status'=>'1']);
                 return $this->success('预订成功！');
             }else{
                 db('owner')->update($data);
@@ -57,11 +61,22 @@ class Order extends Base
         } else {
             $owner=db('owner')->where('owner_id',session('user_id'))->find();
             $where['village_id']=$owner['owner_village'];
-            $where['status']=0;
-            $list = db('park')->where($where)->select();
+            $list = db('garage')->where($where)->select();
             $this->assign('list', $list);
+            $where1['garage_id']=$list[0]['id'];
+            $list1=db('park')->where($where1)->select();
             return view();
         }
+    }
+    /**
+     * 车位列表
+     */
+    public function idForm(){
+        $data =$this->request->post('garage_id');
+        $where['status']=0;
+        $where['garage_id']=$data;
+        $park=db('park')->where($where)->select();
+        return $park;
     }
 
     /**
@@ -89,7 +104,7 @@ class Order extends Base
         if($data['data']['status']=='1'){
             return $this->error('取消预订已完成，请勿重复点击!');
         }else{
-            db('t_order')->where('id',$data['data']['id'])->update(['status'=>1,'time'=>time()]);
+            db('t_order')->where('id',$data['data']['id'])->update(['status'=>1,'endtime'=>time()]);
             db('park')->where('id',$data['data']['park_id'])->update(['status'=>0]);
             return $this->success('订单已完成!');
         }
